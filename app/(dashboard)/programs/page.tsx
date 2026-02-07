@@ -15,6 +15,7 @@ import {
   MoreVertical,
   History,
   LayoutDashboard,
+  Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -74,11 +75,21 @@ export default function ProgramsPage() {
 
   return (
     <div className="space-y-8 animate-in fade-in">
-      <div>
-        <h1 className="text-3xl font-bold text-slate-900">Programok</h1>
-        <p className="text-slate-500">
-          Rendezvények kezelése és felelősök kijelölése
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900">Programok</h1>
+          <p className="text-slate-500">
+            Rendezvények kezelése és felelősök kijelölése
+          </p>
+        </div>
+        {can("programs", "create") && (
+          <Link href="/programs/new">
+            <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">
+              <Plus className="w-4 h-4 mr-2" />
+              Új Program
+            </Button>
+          </Link>
+        )}
       </div>
 
       <div className="relative">

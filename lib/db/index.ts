@@ -7,3 +7,4 @@ export * from "./crew-member";
 export * from "./rehearsal";
 export * from "./chat";
 export * from "./equipment";
+export * from "./program-file";

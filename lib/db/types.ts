@@ -63,6 +63,13 @@ export interface ProgramFile {
   id: number;
   program: number | null;
   file: string | null;
+  file_name: string | null;
+  file_path: string | null;
+  file_size: number | null;
+  mime_type: string | null;
+  file_url: string | null;
+  uploaded_at: string | null;
+  uploaded_by: string | null;
 }
 
 export interface Rehearsal {
