@@ -1,7 +1,7 @@
 "use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { createClient } from "../lib/supabase/client.ts";
+import { createClient } from "../lib/supabase/client";
 import { UserResponse } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 import {
@@ -9,7 +9,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "./ui/dropdown-menu.jsx";
+} from "./ui/dropdown-menu";
 import { LogOut } from "lucide-react";
 import { redirect } from "next/navigation";
 
