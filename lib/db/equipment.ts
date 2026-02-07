@@ -4,6 +4,7 @@ import type {
   EquipmentItem,
   EquipmentLoan,
   EquipmentLoanItem,
+  EquipmentCategory,
 } from "./types";
 
 export async function listEquipmentTypes(): Promise<EquipmentType[]> {
@@ -26,8 +27,34 @@ export async function listEquipmentItems(): Promise<EquipmentItem[]> {
   return (data ?? []) as EquipmentItem[];
 }
 
+export async function listEquipmentItemsByType(
+  typeId: number,
+): Promise<EquipmentItem[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("equipment_item")
+    .select("*")
+    .eq("type", typeId)
+    .order("serial");
+  if (error) throw error;
+  return (data ?? []) as EquipmentItem[];
+}
+
+export async function listEquipmentItemsByCategory(
+  category: EquipmentCategory,
+): Promise<(EquipmentItem & { equipment_type: EquipmentType })[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("equipment_item")
+    .select("*, equipment_type:equipment_type!inner(*)")
+    .eq("equipment_type.category", category)
+    .order("id");
+  if (error) throw error;
+  return (data ?? []) as (EquipmentItem & { equipment_type: EquipmentType })[];
+}
+
 export async function listEquipmentLoans(
-  status?: "aktiv" | "lezart"
+  status?: "aktiv" | "lezart",
 ): Promise<EquipmentLoan[]> {
   const supabase = createClient();
   let query = supabase.from("equipment_loan").select("*");
@@ -42,13 +69,83 @@ export async function listEquipmentLoans(
 
 export async function listEquipmentLoanItems(): Promise<EquipmentLoanItem[]> {
   const supabase = createClient();
-  const { data, error } = await supabase.from("equipment_loan_item").select("*");
+  const { data, error } = await supabase
+    .from("equipment_loan_item")
+    .select("*");
   if (error) throw error;
   return (data ?? []) as EquipmentLoanItem[];
 }
 
+export async function createEquipmentLoan(
+  loan: Omit<EquipmentLoan, "id">,
+): Promise<EquipmentLoan> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("equipment_loan")
+    .insert(loan as Record<string, unknown>)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as EquipmentLoan;
+}
+
+export async function updateEquipmentLoan(
+  id: number,
+  updates: Partial<EquipmentLoan>,
+): Promise<EquipmentLoan> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("equipment_loan")
+    .update(updates as Record<string, unknown>)
+    .eq("id", id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as EquipmentLoan;
+}
+
+export async function deleteEquipmentLoan(id: number): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase.from("equipment_loan").delete().eq("id", id);
+  if (error) throw error;
+}
+
+export async function createEquipmentLoanItem(
+  loanItem: Omit<EquipmentLoanItem, "id">,
+): Promise<EquipmentLoanItem> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("equipment_loan_item")
+    .insert(loanItem as Record<string, unknown>)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as EquipmentLoanItem;
+}
+
+export async function getLoanItemsByLoan(
+  loanId: number,
+): Promise<EquipmentLoanItem[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("equipment_loan_item")
+    .select("*")
+    .eq("loan", loanId);
+  if (error) throw error;
+  return (data ?? []) as EquipmentLoanItem[];
+}
+
+export async function deleteLoanItemsByLoan(loanId: number): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("equipment_loan_item")
+    .delete()
+    .eq("loan", loanId);
+  if (error) throw error;
+}
+
 export async function createEquipmentType(
-  type: Omit<EquipmentType, "id">
+  type: Omit<EquipmentType, "id">,
 ): Promise<EquipmentType> {
   const supabase = createClient();
   const { data, error } = await supabase
@@ -62,7 +159,7 @@ export async function createEquipmentType(
 
 export async function updateEquipmentType(
   id: number,
-  updates: Partial<EquipmentType>
+  updates: Partial<EquipmentType>,
 ): Promise<EquipmentType> {
   const supabase = createClient();
   const { data, error } = await supabase
@@ -82,7 +179,7 @@ export async function deleteEquipmentType(id: number): Promise<void> {
 }
 
 export async function createEquipmentItem(
-  item: Omit<EquipmentItem, "id">
+  item: Omit<EquipmentItem, "id">,
 ): Promise<EquipmentItem> {
   const supabase = createClient();
   const { data, error } = await supabase
@@ -96,7 +193,7 @@ export async function createEquipmentItem(
 
 export async function updateEquipmentItem(
   id: number,
-  updates: Partial<EquipmentItem>
+  updates: Partial<EquipmentItem>,
 ): Promise<EquipmentItem> {
   const supabase = createClient();
   const { data, error } = await supabase

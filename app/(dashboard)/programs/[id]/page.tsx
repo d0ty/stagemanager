@@ -94,7 +94,11 @@ export default function ProgramDetailPage({
   const [stageList, setStageList] = useState("");
   const [otherList, setOtherList] = useState("");
 
-  const { data: program, isLoading, error } = useQuery({
+  const {
+    data: program,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["program", programId],
     queryFn: () => getProgram(programId),
     enabled: !isNaN(programId),
@@ -199,7 +203,13 @@ export default function ProgramDetailPage({
   });
 
   const toggleTaskStatusMutation = useMutation({
-    mutationFn: ({ id, currentStatus }: { id: number; currentStatus: string | null }) => {
+    mutationFn: ({
+      id,
+      currentStatus,
+    }: {
+      id: number;
+      currentStatus: string | null;
+    }) => {
       const newStatus = currentStatus === "kesz" ? "teendo" : "kesz";
       return updateTask(id, { status: newStatus as any });
     },
@@ -209,8 +219,11 @@ export default function ProgramDetailPage({
   });
 
   const updateEquipmentListsMutation = useMutation({
-    mutationFn: (data: { foh_list: string; stage_list: string; other_list: string }) =>
-      updateProgram(programId, data),
+    mutationFn: (data: {
+      foh_list: string;
+      stage_list: string;
+      other_list: string;
+    }) => updateProgram(programId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["program", programId] });
     },
@@ -343,7 +356,7 @@ export default function ProgramDetailPage({
   const lightTasks = tasks.filter((t) => t.type === "light");
 
   const uniqueStaffCount = new Set(
-    [...crew.map((c) => c.staff), program.leader].filter(Boolean)
+    [...crew.map((c) => c.staff), program.leader].filter(Boolean),
   ).size;
 
   return (
@@ -520,7 +533,7 @@ export default function ProgramDetailPage({
                     .sort(
                       (a, b) =>
                         new Date(a.date!).getTime() -
-                        new Date(b.date!).getTime()
+                        new Date(b.date!).getTime(),
                     )
                     .slice(0, 3)
                     .map((r) => (
@@ -587,7 +600,10 @@ export default function ProgramDetailPage({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="stage_list" className="text-base font-semibold">
+                  <Label
+                    htmlFor="stage_list"
+                    className="text-base font-semibold"
+                  >
                     Stage (Színpad)
                   </Label>
                   <Textarea
@@ -604,7 +620,10 @@ export default function ProgramDetailPage({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="other_list" className="text-base font-semibold">
+                  <Label
+                    htmlFor="other_list"
+                    className="text-base font-semibold"
+                  >
                     Egyéb
                   </Label>
                   <Textarea
@@ -765,8 +784,8 @@ export default function ProgramDetailPage({
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
-                  <Lightbulb className="w-5 h-5 text-amber-500" />{" "}
-                  Fénytechnikai Feladatok
+                  <Lightbulb className="w-5 h-5 text-amber-500" /> Fénytechnikai
+                  Feladatok
                 </CardTitle>
                 {can("tasks", "create") && (
                   <Button
@@ -985,7 +1004,7 @@ export default function ProgramDetailPage({
                         disabled={uploadFileMutation.isPending}
                         onClick={(e) => {
                           e.currentTarget.previousElementSibling?.dispatchEvent(
-                            new MouseEvent("click")
+                            new MouseEvent("click"),
                           );
                         }}
                       >
@@ -1025,11 +1044,13 @@ export default function ProgramDetailPage({
                             </p>
                             {file.uploaded_at && (
                               <>
-                                <span className="text-xs text-slate-300">•</span>
+                                <span className="text-xs text-slate-300">
+                                  •
+                                </span>
                                 <p className="text-xs text-slate-500">
                                   {format(
                                     new Date(file.uploaded_at),
-                                    "dd/MM/yyyy HH:mm"
+                                    "dd/MM/yyyy HH:mm",
                                   )}
                                 </p>
                               </>
@@ -1107,7 +1128,7 @@ export default function ProgramDetailPage({
                     .sort(
                       (a, b) =>
                         new Date(a.date || 0).getTime() -
-                        new Date(b.date || 0).getTime()
+                        new Date(b.date || 0).getTime(),
                     )
                     .map((rehearsal) => (
                       <div
@@ -1121,7 +1142,7 @@ export default function ProgramDetailPage({
                               {rehearsal.date
                                 ? format(
                                     new Date(rehearsal.date),
-                                    "dd/MM/yyyy HH:mm"
+                                    "dd/MM/yyyy HH:mm",
                                   )
                                 : "-"}
                             </span>
@@ -1157,9 +1178,7 @@ export default function ProgramDetailPage({
                               size="icon"
                               className="h-8 w-8 text-red-400 hover:text-red-600"
                               onClick={() => {
-                                if (
-                                  confirm("Biztosan törlöd ezt a próbát?")
-                                ) {
+                                if (confirm("Biztosan törlöd ezt a próbát?")) {
                                   deleteRehearsalMutation.mutate(rehearsal.id);
                                 }
                               }}
@@ -1197,7 +1216,7 @@ export default function ProgramDetailPage({
                   .filter((e) => e.date)
                   .sort(
                     (a, b) =>
-                      new Date(a.date!).getTime() - new Date(b.date!).getTime()
+                      new Date(a.date!).getTime() - new Date(b.date!).getTime(),
                   )
                   .map((event, idx) => (
                     <div
@@ -1224,9 +1243,9 @@ export default function ProgramDetailPage({
                           </span>
                         </div>
                         {event.type === "rehearsal" &&
-                          (event.data as typeof rehearsals[0]).notes && (
+                          (event.data as (typeof rehearsals)[0]).notes && (
                             <p className="text-sm text-slate-600 mt-1">
-                              {(event.data as typeof rehearsals[0]).notes}
+                              {(event.data as (typeof rehearsals)[0]).notes}
                             </p>
                           )}
                       </div>
@@ -1361,9 +1380,7 @@ export default function ProgramDetailPage({
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="lesson_period">
-                Tanrendi óra (opcionális)
-              </Label>
+              <Label htmlFor="lesson_period">Tanrendi óra (opcionális)</Label>
               <Input
                 name="lesson_period"
                 placeholder="pl. 3. óra, 4-5. óra"
