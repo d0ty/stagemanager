@@ -19,10 +19,10 @@ create table role (
     id serial,
     name varchar(255),
     color varchar(255),
-    add role_view array,
-    read role_view array,
-    update role_view array,
-    delete role_view array,
+    "add" role_view array,
+    "read" role_view array,
+    "update" role_view array,
+    "delete" role_view array,
 
     primary key (id)
 );
@@ -31,7 +31,7 @@ create table staff (
     id uuid not null references auth.users on delete cascade,
     name varchar(255),
     mention_name varchar(255),
-    postition staff_position,
+    position staff_position,
     role integer references role,
 
     primary key (id)
@@ -80,20 +80,16 @@ create table crew_member (
 );
 
 create table program_file (
-    id serial,
+    id serial primary key,
     program integer references public.program,
-    file uuid references storage.objects,
-
-    primary key (id, program, file)
+    file uuid
 );
 
 create table rehearsal (
-    id serial,
+    id serial primary key,
     program integer references public.program,
     lesson_period text,
-    notes text,
-
-    primary key (id, program)
+    notes text
 );
 
 create type task_type as enum (
@@ -170,13 +166,11 @@ create type equipment_status as enum (
 );
 
 create table equipment_item (
-    id serial,
+    id serial primary key,
     type integer not null references public.equipment_type,
     serial varchar(255) not null,
     status equipment_status not null,
-    notes text,
-
-    primary key (id, type)
+    notes text
 );
 
 create type equipment_inventory as enum (
@@ -204,9 +198,8 @@ create table equipment_loan (
 );
 
 create table equipment_loan_item (
-    id serial,
-    loan integer not null,
-    item integer not null,
-
-    primary key (id, loan, item)
+    id serial primary key,
+    loan integer not null references public.equipment_loan(id) on delete cascade,
+    item integer not null references public.equipment_item(id) on delete cascade,
+    unique (loan, item)
 );
