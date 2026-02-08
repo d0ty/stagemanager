@@ -2,31 +2,11 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Suspense } from "react";
+import dynamic from "next/dynamic";
 
-function ErrorContent({ error }: { error: string }) {
-  const url = new URLSearchParams(error.replace("#", ""));
+const ErrorContent = dynamic(() => import("./error_content"), { ssr: false });
 
-  return (
-    <>
-      {url ? (
-        <p className="text-sm text-muted-foreground">
-          Error Code: {url.get("error_code")} <br /> Description:{" "}
-          {url.get("error_description")}
-        </p>
-      ) : (
-        <p className="text-sm text-muted-foreground">
-          An unspecified error occurred.
-        </p>
-      )}
-    </>
-  );
-}
-
-export default function Page({
-  searchParams,
-}: {
-  searchParams: Promise<{ error: string }>;
-}) {
+export default function Page() {
   return (
     <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
       <div className="w-full max-w-sm">
@@ -39,7 +19,7 @@ export default function Page({
             </CardHeader>
             <CardContent>
               <Suspense>
-                <ErrorContent error={window.location.hash} />
+                <ErrorContent />
               </Suspense>
             </CardContent>
           </Card>
