@@ -5,6 +5,8 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 
+export const dynamic = "force-dynamic";
+
 export default function Home() {
   if (window.location.hash.startsWith("#error=access_denied")) {
     redirect("/auth/error" + window.location.hash);
