@@ -26,9 +26,6 @@ export default async function Home() {
               Bejelentkezés
             </Button>
           </Link>
-          <Link href="/auth/sign-up">
-            <Button variant="outline">Regisztráció</Button>
-          </Link>
         </div>
       </div>
     </main>
