@@ -1,18 +1,17 @@
+"use client";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Suspense } from "react";
 
-async function ErrorContent({
-  searchParams,
-}: {
-  searchParams: Promise<{ error: string }>;
-}) {
-  const params = await searchParams;
+function ErrorContent({ error }: { error: string }) {
+  const url = new URLSearchParams(error.replace("#", ""));
 
   return (
     <>
-      {params?.error ? (
+      {url ? (
         <p className="text-sm text-muted-foreground">
-          Code error: {params.error}
+          Error Code: {url.get("error_code")} <br /> Description:{" "}
+          {url.get("error_description")}
         </p>
       ) : (
         <p className="text-sm text-muted-foreground">
@@ -40,7 +39,7 @@ export default function Page({
             </CardHeader>
             <CardContent>
               <Suspense>
-                <ErrorContent searchParams={searchParams} />
+                <ErrorContent error={window.location.hash} />
               </Suspense>
             </CardContent>
           </Card>

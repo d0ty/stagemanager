@@ -1,17 +1,24 @@
+"use client";
+
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { createClient } from "@/lib/supabase/client";
 
-export default async function Home() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (user) {
-    redirect("/dashboard");
+export default function Home() {
+  if (window.location.hash.startsWith("#error=access_denied")) {
+    redirect("/auth/error" + window.location.hash);
   }
+
+  if (window.location.hash.startsWith("#access_token")) {
+    redirect("/auth/update-password" + window.location.hash);
+  }
+
+  createClient()
+    .auth.getUser()
+    .then((user) => {
+      if (user) redirect("/dashboard");
+    });
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-6">

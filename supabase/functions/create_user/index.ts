@@ -59,8 +59,10 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   ).auth.admin;
 
-  const { data: user, error: inviteError } =
-    await admin.inviteUserByEmail(email);
+  const { data: user, error: inviteError } = await admin.inviteUserByEmail(
+    email,
+    { redirectTo: req.headers.get("referer") + "auth/update-password" },
+  );
 
   if (inviteError) {
     console.error(inviteError);
