@@ -3,14 +3,21 @@ import type { Staff } from "./types";
 
 export async function listStaff(): Promise<Staff[]> {
   const supabase = createClient();
-  const { data, error } = await supabase.from("staff").select("*").order("name");
+  const { data, error } = await supabase
+    .from("staff")
+    .select("*")
+    .order("name");
   if (error) throw error;
   return (data ?? []) as Staff[];
 }
 
 export async function getStaff(id: string): Promise<Staff | null> {
   const supabase = createClient();
-  const { data, error } = await supabase.from("staff").select("*").eq("id", id).single();
+  const { data, error } = await supabase
+    .from("staff")
+    .select("*")
+    .eq("id", id)
+    .single();
   if (error) {
     if (error.code === "PGRST116") return null;
     throw error;
@@ -19,19 +26,37 @@ export async function getStaff(id: string): Promise<Staff | null> {
 }
 
 export async function createStaff(
-  staff: Omit<Staff, "id"> & { id?: string }
+  staff: Omit<Staff, "id"> & { email: string; phone: string },
 ): Promise<Staff> {
   const supabase = createClient();
+  const { data: user, error: userError } = await supabase.functions.invoke(
+    "create_user",
+    {
+      body: { email: staff.email, phone: staff.phone },
+    },
+  );
+
+  console.log(user, staff);
+  if (userError) throw userError;
   const { data, error } = await supabase
     .from("staff")
-    .insert(staff as Record<string, unknown>)
+    .insert({
+      id: user.user.id,
+      name: staff.name,
+      mention_name: staff.mention_name,
+      position: staff.position,
+      role: staff.role,
+    })
     .select()
     .single();
   if (error) throw error;
   return data as Staff;
 }
 
-export async function updateStaff(id: string, updates: Partial<Staff>): Promise<Staff> {
+export async function updateStaff(
+  id: string,
+  updates: Partial<Staff>,
+): Promise<Staff> {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("staff")

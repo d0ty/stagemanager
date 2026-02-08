@@ -4,13 +4,7 @@ import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { usePermissions } from "@/hooks/use-permissions";
-import {
-  Plus,
-  User,
-  Trash2,
-  Edit,
-  Shield,
-} from "lucide-react";
+import { Plus, User, Trash2, Edit, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,18 +38,8 @@ import {
   updateStaff,
   deleteStaff,
 } from "@/lib/db/staff";
-import {
-  listRoles,
-  createRole,
-  updateRole,
-  deleteRole,
-} from "@/lib/db/role";
-import type {
-  Staff,
-  Role,
-  StaffPosition,
-  RoleView,
-} from "@/lib/db/types";
+import { listRoles, createRole, updateRole, deleteRole } from "@/lib/db/role";
+import type { Staff, Role, StaffPosition, RoleView } from "@/lib/db/types";
 
 const POSITIONS: { value: StaffPosition; label: string }[] = [
   { value: "hangtechnikus", label: "Hangtechnikus" },
@@ -100,9 +84,13 @@ export default function StaffPage() {
   const [editingStaff, setEditingStaff] = useState<Staff | null>(null);
 
   // Staff form state
+  const [staffEmail, setStaffEmail] = useState("");
+  const [staffPhone, setStaffPhone] = useState("");
   const [staffName, setStaffName] = useState("");
   const [staffMentionName, setStaffMentionName] = useState("");
-  const [staffPosition, setStaffPosition] = useState<StaffPosition | "none">("egyeb");
+  const [staffPosition, setStaffPosition] = useState<StaffPosition | "none">(
+    "egyeb",
+  );
   const [staffRoleId, setStaffRoleId] = useState<string>("none");
 
   // Role dialog state
@@ -137,7 +125,8 @@ export default function StaffPage() {
 
   // Staff mutations
   const createStaffMutation = useMutation({
-    mutationFn: (data: Omit<Staff, "id"> & { id?: string }) => createStaff(data),
+    mutationFn: (data: Omit<Staff, "id"> & { email: string; phone: string }) =>
+      createStaff(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["staff"] });
       closeStaffDialog();
@@ -213,7 +202,9 @@ export default function StaffPage() {
     const mentionName =
       staffMentionName || staffName.toLowerCase().replace(/\s+/g, "_");
 
-    const data: Partial<Staff> = {
+    const data: Partial<Staff & { email: string; phone: string }> = {
+      email: staffEmail,
+      phone: staffPhone,
       name: staffName,
       mention_name: mentionName,
       position: staffPosition === "none" ? null : staffPosition,
@@ -226,10 +217,9 @@ export default function StaffPage() {
       // For new staff without a linked auth user, we need a UUID.
       // In practice, staff records are typically linked to auth.users.
       // Here we create with the current user's ID as a fallback demo.
-      createStaffMutation.mutate({
-        ...(data as Omit<Staff, "id">),
-        id: currentUserId ?? undefined,
-      } as Omit<Staff, "id"> & { id?: string });
+      createStaffMutation.mutate(
+        data as Omit<Staff, "id"> & { email: string; phone: string },
+      );
     }
   };
 
@@ -248,7 +238,9 @@ export default function StaffPage() {
       setRoleName("");
       setRoleColor("kek");
       setRoleAdd([]);
-      setRoleRead(ROLE_VIEWS.map((v) => v.value).filter((v) => v !== "settings"));
+      setRoleRead(
+        ROLE_VIEWS.map((v) => v.value).filter((v) => v !== "settings"),
+      );
       setRoleUpdate([]);
       setRoleDelete([]);
     }
@@ -281,7 +273,7 @@ export default function StaffPage() {
   const togglePermission = (
     list: RoleView[],
     setList: React.Dispatch<React.SetStateAction<RoleView[]>>,
-    view: RoleView
+    view: RoleView,
   ) => {
     if (list.includes(view)) {
       setList(list.filter((v) => v !== view));
@@ -327,9 +319,7 @@ export default function StaffPage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-slate-900">Személyzet</h1>
-          <p className="text-slate-500">
-            Technikusok és szervezők kezelése
-          </p>
+          <p className="text-slate-500">Technikusok és szervezők kezelése</p>
         </div>
         {can("staff", "create") && (
           <Button
@@ -379,8 +369,8 @@ export default function StaffPage() {
                                 <Badge
                                   className={`text-xs w-fit ${
                                     role.color
-                                      ? ROLE_COLORS[role.color] ??
-                                        "bg-indigo-100 text-indigo-800"
+                                      ? (ROLE_COLORS[role.color] ??
+                                        "bg-indigo-100 text-indigo-800")
                                       : "bg-indigo-100 text-indigo-800"
                                   }`}
                                 >
@@ -476,7 +466,7 @@ export default function StaffPage() {
                         value={role.id.toString()}
                         className={`border rounded-lg ${
                           role.color
-                            ? ROLE_COLOR_BG[role.color] ?? "bg-white"
+                            ? (ROLE_COLOR_BG[role.color] ?? "bg-white")
                             : "bg-white"
                         }`}
                       >
@@ -505,7 +495,7 @@ export default function StaffPage() {
                                 onClick={() => {
                                   if (
                                     confirm(
-                                      "Biztosan törölni szeretnéd ezt a szerepkört?"
+                                      "Biztosan törölni szeretnéd ezt a szerepkört?",
                                     )
                                   ) {
                                     deleteRoleMutation.mutate(role.id);
@@ -606,8 +596,8 @@ export default function StaffPage() {
                             <Badge
                               className={
                                 role?.color
-                                  ? ROLE_COLORS[role.color] ??
-                                    "bg-indigo-100 text-indigo-800"
+                                  ? (ROLE_COLORS[role.color] ??
+                                    "bg-indigo-100 text-indigo-800")
                                   : "bg-slate-100 text-slate-600"
                               }
                             >
@@ -649,14 +639,43 @@ export default function StaffPage() {
           </DialogHeader>
           <form onSubmit={handleStaffSubmit} className="space-y-4 mt-4">
             <div className="grid gap-2">
-              <Label>Név</Label>
+              <Label>
+                E-mail cím<span className="text-red-700">*</span>
+              </Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  value={staffEmail}
+                  onChange={(e) => setStaffEmail(e.target.value)}
+                  placeholder="user@email.com"
+                  type="email"
+                  required
+                />
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <Label>Telefonszám</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  value={staffPhone}
+                  onChange={(e) => setStaffPhone(e.target.value)}
+                  placeholder="063030103"
+                  type="phone"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <Label>
+                Név<span className="text-red-700">*</span>
+              </Label>
               <Input
                 value={staffName}
                 onChange={(e) => {
                   setStaffName(e.target.value);
                   if (!editingStaff) {
                     setStaffMentionName(
-                      e.target.value.toLowerCase().replace(/\s+/g, "_")
+                      e.target.value.toLowerCase().replace(/\s+/g, "_"),
                     );
                   }
                 }}
@@ -673,7 +692,7 @@ export default function StaffPage() {
                   value={staffMentionName}
                   onChange={(e) =>
                     setStaffMentionName(
-                      e.target.value.toLowerCase().replace(/\s+/g, "_")
+                      e.target.value.toLowerCase().replace(/\s+/g, "_"),
                     )
                   }
                   placeholder="mention_nev"
@@ -724,10 +743,7 @@ export default function StaffPage() {
             </div>
 
             <div className="flex justify-end mt-6">
-              <Button
-                type="submit"
-                className="bg-indigo-600 text-white w-full"
-              >
+              <Button type="submit" className="bg-indigo-600 text-white w-full">
                 Mentés
               </Button>
             </div>
@@ -803,9 +819,7 @@ export default function StaffPage() {
                         key={view.value}
                         className="border-b last:border-b-0 hover:bg-slate-50"
                       >
-                        <td className="py-3 pr-4 font-medium">
-                          {view.label}
-                        </td>
+                        <td className="py-3 pr-4 font-medium">{view.label}</td>
                         <td className="text-center py-3 px-3">
                           <Checkbox
                             checked={roleRead.includes(view.value)}
@@ -813,7 +827,7 @@ export default function StaffPage() {
                               togglePermission(
                                 roleRead,
                                 setRoleRead,
-                                view.value
+                                view.value,
                               )
                             }
                           />
@@ -822,11 +836,7 @@ export default function StaffPage() {
                           <Checkbox
                             checked={roleAdd.includes(view.value)}
                             onCheckedChange={() =>
-                              togglePermission(
-                                roleAdd,
-                                setRoleAdd,
-                                view.value
-                              )
+                              togglePermission(roleAdd, setRoleAdd, view.value)
                             }
                           />
                         </td>
@@ -837,7 +847,7 @@ export default function StaffPage() {
                               togglePermission(
                                 roleUpdate,
                                 setRoleUpdate,
-                                view.value
+                                view.value,
                               )
                             }
                           />
@@ -849,7 +859,7 @@ export default function StaffPage() {
                               togglePermission(
                                 roleDelete,
                                 setRoleDelete,
-                                view.value
+                                view.value,
                               )
                             }
                           />
@@ -862,11 +872,7 @@ export default function StaffPage() {
             </div>
 
             <div className="flex justify-end gap-2 border-t pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={closeRoleDialog}
-              >
+              <Button type="button" variant="outline" onClick={closeRoleDialog}>
                 Mégse
               </Button>
               <Button type="submit" className="bg-indigo-600 text-white">
