@@ -1,26 +1,33 @@
 "use client";
 
-import { redirect } from "next/navigation";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 
-export const dynamic = "force-dynamic";
-
 export default function Home() {
-  if (window.location.hash.startsWith("#error=access_denied")) {
-    redirect("/auth/error" + window.location.hash);
-  }
+  const router = useRouter();
 
-  if (window.location.hash.startsWith("#access_token")) {
-    redirect("/auth/update-password" + window.location.hash);
-  }
+  useEffect(() => {
+    const hash = window.location.hash;
 
-  createClient()
-    .auth.getUser()
-    .then((user) => {
-      if (user) redirect("/dashboard");
-    });
+    if (hash.startsWith("#error=access_denied")) {
+      router.replace("/auth/error" + hash);
+      return;
+    }
+
+    if (hash.startsWith("#access_token")) {
+      router.replace("/auth/update-password" + hash);
+      return;
+    }
+
+    createClient()
+      .auth.getUser()
+      .then(({ data: { user } }) => {
+        if (user) router.replace("/dashboard");
+      });
+  }, [router]);
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-6">
