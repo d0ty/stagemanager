@@ -1,6 +1,6 @@
 "use client";
 
-export function ErrorContent() {
+export default function ErrorContent() {
   const url = new URLSearchParams(window.location.hash.replace("#", ""));
 
   return (
