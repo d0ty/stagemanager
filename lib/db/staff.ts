@@ -6,6 +6,7 @@ export async function listStaff(): Promise<Staff[]> {
   const { data, error } = await supabase
     .from("staff_data")
     .select("*")
+    .neq("active", false)
     .order("name");
   if (error) throw error;
   return (data ?? []) as Staff[];
@@ -83,6 +84,9 @@ export async function updateStaff(
 
 export async function deleteStaff(id: string): Promise<void> {
   const supabase = createClient();
-  const { error } = await supabase.from("staff").delete().eq("id", id);
+  const { data, error } = await supabase
+    .from("staff")
+    .update({ active: false })
+    .eq("id", id);
   if (error) throw error;
 }

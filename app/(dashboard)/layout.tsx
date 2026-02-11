@@ -69,10 +69,12 @@ export default function DashboardLayout({
       if (!u) router.replace("/auth/login");
       supabase
         .from("staff")
-        .select("*", { count: "exact" })
+        .select("*")
         .eq("id", u!.id)
+        .limit(1)
+        .maybeSingle()
         .then((staff) => {
-          if (staff.count == 0) handleLogout();
+          if (!staff.data || !staff.data.active) handleLogout();
         });
     });
   }, [router, supabase.auth]);
