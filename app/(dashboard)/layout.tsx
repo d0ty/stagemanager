@@ -53,14 +53,19 @@ export default function DashboardLayout({
   const router = useRouter();
   const pathname = usePathname();
   const supabase = createClient();
-  const { can } = usePermissions();
-  const [user, setUser] = useState<{ email?: string; full_name?: string } | null>(null);
+  const { can, staff } = usePermissions();
+  const [user, setUser] = useState<{
+    email?: string;
+    full_name?: string;
+  } | null>(null);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user: u } }) => {
-      setUser(u ? { email: u.email, full_name: u.user_metadata?.full_name } : null);
+      setUser(
+        u ? { email: u.email, full_name: u.user_metadata?.full_name } : null,
+      );
       if (!u) router.replace("/auth/login");
     });
   }, [router, supabase.auth]);
@@ -91,7 +96,8 @@ export default function DashboardLayout({
       <nav className="flex-1 p-4 space-y-2">
         {navItems.map((item) => {
           const isActive =
-            pathname === item.href || (pathname === "/" && item.href === "/dashboard");
+            pathname === item.href ||
+            (pathname === "/" && item.href === "/dashboard");
           return (
             <Link
               key={item.name}
@@ -132,9 +138,11 @@ export default function DashboardLayout({
               </div>
               <div className="flex-1 text-left">
                 <p className="text-sm font-medium text-white">
-                  {user?.full_name || "Felhasználó"}
+                  {staff.name || "Felhasználó"}
                 </p>
-                <p className="text-xs text-slate-500 truncate">{user?.email || ""}</p>
+                <p className="text-xs text-slate-500 truncate">
+                  {user?.email || ""}
+                </p>
               </div>
             </button>
           </DropdownMenuTrigger>
@@ -157,7 +165,9 @@ export default function DashboardLayout({
       <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Biztosan ki szeretnél jelentkezni?</AlertDialogTitle>
+            <AlertDialogTitle>
+              Biztosan ki szeretnél jelentkezni?
+            </AlertDialogTitle>
             <AlertDialogDescription>
               A kijelentkezés után újra be kell jelentkezned a folytatáshoz.
             </AlertDialogDescription>
