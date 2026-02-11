@@ -211,7 +211,7 @@ export default function StaffPage() {
     const mentionName =
       staffMentionName || staffName.toLowerCase().replace(/\s+/g, "_");
 
-    const data: Partial<Staff & { email: string; phone: string }> = {
+    const data: Partial<Staff> & { email: string; phone: string } = {
       email: staffEmail,
       phone: staffPhone,
       name: staffName,
