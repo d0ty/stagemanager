@@ -70,6 +70,13 @@ export default function DashboardLayout({
     });
   }, [router, supabase.auth]);
 
+  useEffect(() => {
+    if (!staff || !staff.name) {
+      handleLogout();
+      return;
+    }
+  }, [staff]);
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push("/");
@@ -138,7 +145,7 @@ export default function DashboardLayout({
               </div>
               <div className="flex-1 text-left">
                 <p className="text-sm font-medium text-white">
-                  {staff.name || "Felhasználó"}
+                  {staff?.name || "Felhasználó"}
                 </p>
                 <p className="text-xs text-slate-500 truncate">
                   {user?.email || ""}
