@@ -45,7 +45,7 @@ export async function createStaff(
       id: user.user.id,
       name: staff.name,
       mention_name: staff.mention_name,
-      position: staff.position,
+      positions: staff.positions,
       role: staff.role,
     })
     .select()

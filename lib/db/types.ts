@@ -52,7 +52,7 @@ export interface Staff {
   id: string;
   name: string | null;
   mention_name: string | null;
-  position: StaffPosition | null;
+  positions: StaffPosition[] | null;
   role: number | null;
   email: string | null;
   phone: string | null;

@@ -88,9 +88,7 @@ export default function StaffPage() {
   const [staffPhone, setStaffPhone] = useState("");
   const [staffName, setStaffName] = useState("");
   const [staffMentionName, setStaffMentionName] = useState("");
-  const [staffPosition, setStaffPosition] = useState<StaffPosition | "none">(
-    "egyeb",
-  );
+  const [staffPositions, setStaffPositions] = useState<StaffPosition[]>([]);
   const [staffRoleId, setStaffRoleId] = useState<string>("none");
 
   // Role dialog state
@@ -183,7 +181,7 @@ export default function StaffPage() {
       setEditingStaff(staff);
       setStaffName(staff.name ?? "");
       setStaffMentionName(staff.mention_name ?? "");
-      setStaffPosition(staff.position ?? "egyeb");
+      setStaffPositions(staff.positions ?? []);
       setStaffRoleId(staff.role?.toString() ?? "none");
     } else {
       setStaffEmail("");
@@ -191,7 +189,7 @@ export default function StaffPage() {
       setEditingStaff(null);
       setStaffName("");
       setStaffMentionName("");
-      setStaffPosition("egyeb");
+      setStaffPositions([]);
       setStaffRoleId("none");
     }
     setIsStaffDialogOpen(true);
@@ -202,7 +200,7 @@ export default function StaffPage() {
     setEditingStaff(null);
     setStaffName("");
     setStaffMentionName("");
-    setStaffPosition("egyeb");
+    setStaffPositions([]);
     setStaffRoleId("none");
   };
 
@@ -216,7 +214,7 @@ export default function StaffPage() {
       phone: staffPhone,
       name: staffName,
       mention_name: mentionName,
-      position: staffPosition === "none" ? null : staffPosition,
+      positions: staffPositions.length > 0 ? staffPositions : null,
       role: staffRoleId !== "none" ? parseInt(staffRoleId, 10) : null,
     };
 
@@ -291,16 +289,28 @@ export default function StaffPage() {
     }
   };
 
+  const togglePosition = (position: StaffPosition) => {
+    setStaffPositions((prev) =>
+      prev.includes(position)
+        ? prev.filter((p) => p !== position)
+        : [...prev, position],
+    );
+  };
+
   // Helper to get role for a staff member
   const getStaffRole = (staff: Staff): Role | undefined => {
     if (!staff.role) return undefined;
     return rolesList.find((r) => r.id === staff.role);
   };
 
-  const getPositionLabel = (position: StaffPosition | null): string => {
-    if (!position) return "Egyéb";
+  const getPositionLabel = (position: StaffPosition): string => {
     const p = POSITIONS.find((pos) => pos.value === position);
     return p?.label ?? position;
+  };
+
+  const getPositionLabels = (positions: StaffPosition[] | null): string => {
+    if (!positions || positions.length === 0) return "Nincs megadva";
+    return positions.map(getPositionLabel).join(", ");
   };
 
   const formatPermissionLabel = (action: string): string => {
@@ -388,12 +398,24 @@ export default function StaffPage() {
                               )}
                             </div>
                             <div className="flex flex-wrap gap-1 mt-1">
-                              <Badge
-                                variant="secondary"
-                                className="capitalize text-xs"
-                              >
-                                {getPositionLabel(staff.position)}
-                              </Badge>
+                              {staff.positions && staff.positions.length > 0 ? (
+                                staff.positions.map((pos) => (
+                                  <Badge
+                                    key={pos}
+                                    variant="secondary"
+                                    className="capitalize text-xs"
+                                  >
+                                    {getPositionLabel(pos)}
+                                  </Badge>
+                                ))
+                              ) : (
+                                <Badge
+                                  variant="secondary"
+                                  className="capitalize text-xs"
+                                >
+                                  Nincs megadva
+                                </Badge>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -609,7 +631,7 @@ export default function StaffPage() {
                               {staff.name ?? "Névtelen"}
                             </p>
                             <p className="text-sm text-slate-500">
-                              {getPositionLabel(staff.position)}
+                              {getPositionLabels(staff.positions)}
                             </p>
                           </div>
                           <div className="flex items-center gap-3">
@@ -680,7 +702,6 @@ export default function StaffPage() {
                   onChange={(e) => setStaffPhone(e.target.value)}
                   placeholder="063030103"
                   type="phone"
-                  required
                 />
               </div>
             </div>
@@ -724,25 +745,29 @@ export default function StaffPage() {
             </div>
 
             <div className="grid gap-2">
-              <Label>Munkakör</Label>
-              <Select
-                value={staffPosition}
-                onValueChange={(v) =>
-                  setStaffPosition(v as StaffPosition | "none")
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Válassz munkakört..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Nincs megadva</SelectItem>
-                  {POSITIONS.map((pos) => (
-                    <SelectItem key={pos.value} value={pos.value}>
+              <Label>Munkakör(ök)</Label>
+              <div className="space-y-2 rounded-md border p-3">
+                {POSITIONS.map((pos) => (
+                  <div key={pos.value} className="flex items-center gap-2">
+                    <Checkbox
+                      id={`pos-${pos.value}`}
+                      checked={staffPositions.includes(pos.value)}
+                      onCheckedChange={() => togglePosition(pos.value)}
+                    />
+                    <label
+                      htmlFor={`pos-${pos.value}`}
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                    >
                       {pos.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                    </label>
+                  </div>
+                ))}
+              </div>
+              {staffPositions.length === 0 && (
+                <p className="text-xs text-slate-400">
+                  Válassz legalább egy munkakört.
+                </p>
+              )}
             </div>
 
             <div className="grid gap-2">
