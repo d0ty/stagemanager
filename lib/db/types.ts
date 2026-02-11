@@ -1,5 +1,16 @@
-export type StaffPosition = "hangtechnikus" | "fenytechnikus" | "stage" | "szervezo" | "egyeb";
-export type RoleView = "equipment" | "programs" | "staff" | "task" | "chat" | "settings";
+export type StaffPosition =
+  | "hangtechnikus"
+  | "fenytechnikus"
+  | "stage"
+  | "szervezo"
+  | "egyeb";
+export type RoleView =
+  | "equipment"
+  | "programs"
+  | "staff"
+  | "task"
+  | "chat"
+  | "settings";
 export type ProgramState =
   | "varakozo"
   | "tervezes"
@@ -17,7 +28,12 @@ export type CrewPosition =
 export type TaskType = "sound" | "light";
 export type TaskPriority = "alacsony" | "kozepes" | "magas";
 export type TaskStatus = "teendo" | "folyamatban" | "kesz";
-export type EquipmentCategory = "hangtechnika" | "fenytechnika" | "szinpad" | "kabel" | "egyeb";
+export type EquipmentCategory =
+  | "hangtechnika"
+  | "fenytechnika"
+  | "szinpad"
+  | "kabel"
+  | "egyeb";
 export type EquipmentStatus = "elerheto" | "karbantartas" | "selejt";
 export type EquipmentInventory = "foh" | "stage" | "egyeb" | "external";
 export type LoanStatus = "aktiv" | "lezart";
@@ -38,6 +54,8 @@ export interface Staff {
   mention_name: string | null;
   position: StaffPosition | null;
   role: number | null;
+  email: string | null;
+  phone: string | null;
 }
 
 export interface Program {

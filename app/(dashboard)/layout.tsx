@@ -70,13 +70,6 @@ export default function DashboardLayout({
     });
   }, [router, supabase.auth]);
 
-  useEffect(() => {
-    if (!staff || !staff.name) {
-      handleLogout();
-      return;
-    }
-  }, [staff]);
-
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push("/");

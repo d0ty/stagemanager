@@ -4,7 +4,7 @@ import type { Staff } from "./types";
 export async function listStaff(): Promise<Staff[]> {
   const supabase = createClient();
   const { data, error } = await supabase
-    .from("staff")
+    .from("staff_data")
     .select("*")
     .order("name");
   if (error) throw error;
@@ -14,7 +14,7 @@ export async function listStaff(): Promise<Staff[]> {
 export async function getStaff(id: string): Promise<Staff | null> {
   const supabase = createClient();
   const { data, error } = await supabase
-    .from("staff")
+    .from("staff_data")
     .select("*")
     .eq("id", id)
     .single();
@@ -55,9 +55,22 @@ export async function createStaff(
 
 export async function updateStaff(
   id: string,
-  updates: Partial<Staff>,
+  updates: Partial<Staff> & { email?: string; phone?: string },
 ): Promise<Staff> {
   const supabase = createClient();
+
+  const { data: user, error: userError } = await supabase.functions.invoke(
+    "edit_user",
+    {
+      body: { user_id: id, email: updates.email, phone: updates.phone },
+    },
+  );
+
+  if (userError) throw userError;
+
+  delete updates.email;
+  delete updates.phone;
+
   const { data, error } = await supabase
     .from("staff")
     .update(updates as Record<string, unknown>)

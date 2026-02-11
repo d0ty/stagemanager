@@ -134,8 +134,13 @@ export default function StaffPage() {
   });
 
   const updateStaffMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<Staff> }) =>
-      updateStaff(id, data),
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<Staff> & { email: string; phone: string };
+    }) => updateStaff(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["staff"] });
       closeStaffDialog();
@@ -173,12 +178,16 @@ export default function StaffPage() {
   // Staff dialog handlers
   const openStaffDialog = (staff?: Staff) => {
     if (staff) {
+      setStaffEmail(staff.email ?? "");
+      setStaffPhone(staff.phone ?? "");
       setEditingStaff(staff);
       setStaffName(staff.name ?? "");
       setStaffMentionName(staff.mention_name ?? "");
       setStaffPosition(staff.position ?? "egyeb");
       setStaffRoleId(staff.role?.toString() ?? "none");
     } else {
+      setStaffEmail("");
+      setStaffPhone("");
       setEditingStaff(null);
       setStaffName("");
       setStaffMentionName("");
