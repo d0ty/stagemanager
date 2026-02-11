@@ -67,6 +67,13 @@ export default function DashboardLayout({
         u ? { email: u.email, full_name: u.user_metadata?.full_name } : null,
       );
       if (!u) router.replace("/auth/login");
+      supabase
+        .from("staff")
+        .select("*", { count: "exact" })
+        .eq("id", u!.id)
+        .then((staff) => {
+          if (staff.count == 0) handleLogout();
+        });
     });
   }, [router, supabase.auth]);
 
