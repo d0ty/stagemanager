@@ -432,6 +432,17 @@ export default function StaffPage() {
                             @{staff.mention_name}
                           </div>
                         )}
+                        {staff.email && (
+                          <div className="text-sm text-slate-500">
+                            {staff.email}
+                          </div>
+                        )}
+                        {staff.phone && (
+                          <div className="text-sm text-slate-500">
+                            {staff.phone.startsWith("0") ? "" : "+"}
+                            {staff.phone}
+                          </div>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
