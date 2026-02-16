@@ -35,7 +35,11 @@ export default function ChatPage() {
   const isNearBottomRef = useRef(true);
   const isInitialLoadRef = useRef(true);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const supabase = createClient();
+  const supabaseRef = useRef(createClient());
+  const supabase = supabaseRef.current;
+  const presenceChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(
+    null,
+  );
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -230,9 +234,11 @@ export default function ChatPage() {
   useEffect(() => {
     if (!currentUser) return;
 
-    const channel = supabase.channel("chat-presence", {
+    const sb = supabaseRef.current;
+    const channel = sb.channel("chat-presence", {
       config: { presence: { key: currentUser.id } },
     });
+    presenceChannelRef.current = channel;
 
     channel
       .on("presence", { event: "sync" }, () => {
@@ -246,10 +252,10 @@ export default function ChatPage() {
       });
 
     return () => {
-      channel.untrack();
-      supabase.removeChannel(channel);
+      presenceChannelRef.current = null;
+      sb.removeChannel(channel);
     };
-  }, [supabase, currentUser]);
+  }, [currentUser?.id]);
 
   const renderMessageText = (
     text: string,
