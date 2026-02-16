@@ -73,6 +73,7 @@ import {
 import { listStaff } from "@/lib/db/staff";
 import { usePermissions } from "@/hooks/use-permissions";
 import type { CrewPosition } from "@/lib/db/types";
+import Chat from "@/components/chat";
 
 export default function ProgramDetailPage({
   params,
@@ -337,6 +338,7 @@ export default function ProgramDetailPage({
       }
     }
   };
+  const [activeUsers, setActiveUsers] = useState(0);
 
   if (isNaN(programId))
     return (
@@ -1265,18 +1267,18 @@ export default function ProgramDetailPage({
         {/* Chat Tab - Placeholder */}
         <TabsContent value="chat" className="mt-6">
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row justify-between">
               <CardTitle>Program Chat</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-12 text-slate-400">
-                <MessageCircle className="w-16 h-16 mx-auto mb-4 text-slate-200" />
-                <p>A chat funkció hamarosan elérhető lesz.</p>
-                <p className="text-sm mt-2">
-                  Itt beszélhettek a programról a csapattal.
-                </p>
+              <div className="flex flex-row">
+                <User />
+                {activeUsers}
               </div>
-            </CardContent>
+            </CardHeader>
+            <Chat
+              canSend={true}
+              program={programId}
+              onPresenceUpdate={setActiveUsers}
+            />
           </Card>
         </TabsContent>
       </Tabs>

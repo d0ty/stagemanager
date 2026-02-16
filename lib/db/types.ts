@@ -113,6 +113,7 @@ export interface ChatMessage {
   message: string;
   sender: string;
   deleted: boolean | null;
+  program: number | null;
 }
 
 export interface ChatMention {

@@ -1,13 +1,20 @@
 import { createClient } from "@/lib/supabase/client";
 import type { ChatMessage } from "./types";
 
-export async function listChatMessages(limit = 100): Promise<ChatMessage[]> {
+export async function listChatMessages(
+  limit = 100,
+  program?: number,
+): Promise<ChatMessage[]> {
   const supabase = createClient();
-  const { data, error } = await supabase
-    .from("chat_message")
-    .select("*")
-    .order("id", { ascending: false })
-    .limit(limit);
+  let query = supabase.from("chat_message").select("*");
+
+  if (program) query = query.eq("program", program);
+  else query = query.is("program", null);
+
+  query = query.order("id", { ascending: false }).limit(limit);
+
+  const { data, error } = await query;
+
   if (error) throw error;
   return ((data ?? []) as ChatMessage[]).reverse();
 }
