@@ -31,6 +31,9 @@ export default function ChatPage() {
   const [mentionPosition, setMentionPosition] = useState(0);
   const queryClient = useQueryClient();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollViewportRef = useRef<HTMLDivElement | null>(null);
+  const isNearBottomRef = useRef(true);
+  const isInitialLoadRef = useRef(true);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const supabase = createClient();
 
@@ -196,15 +199,31 @@ export default function ChatPage() {
     };
   }, [supabase, messages, setMessages]);
 
+  // Attach a scroll listener to the Radix ScrollArea viewport to track if user is near bottom
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    const viewport = scrollViewportRef.current;
+    if (!viewport) return;
 
-  useEffect(() => {
-    setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: "instant" });
-    }, 100);
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = viewport;
+      isNearBottomRef.current = scrollHeight - scrollTop - clientHeight < 80;
+    };
+
+    viewport.addEventListener("scroll", handleScroll);
+    return () => viewport.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // Auto-scroll: always on initial load, otherwise only if user is near the bottom
+  useEffect(() => {
+    if (messages.length === 0) return;
+
+    if (isInitialLoadRef.current) {
+      isInitialLoadRef.current = false;
+      messagesEndRef.current?.scrollIntoView({ behavior: "instant" });
+    } else if (isNearBottomRef.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
 
   const [activeUsers, setActiveUsers] = useState(0);
 
@@ -286,95 +305,114 @@ export default function ChatPage() {
         </div>
       </div>
 
-      <Card className="flex-1 flex flex-col overflow-hidden">
-        <CardContent className="flex-1 flex flex-col p-0 overflow-hidden">
-          <ScrollArea className="flex-1 p-6">
-            <div className="space-y-4">
-              {messages.length === 0 ? (
-                <div className="text-center py-12 text-slate-400">
-                  <MessageCircle className="w-16 h-16 mx-auto mb-4 text-slate-200" />
-                  <p className="text-lg font-medium">Még nincsenek üzenetek</p>
-                  <p className="text-sm">Légy te az első, aki üzenetet küld!</p>
-                </div>
-              ) : (
-                messages.map((msg) => {
-                  const isOwnMessage = msg.sender === currentUser?.id;
-                  // Check if current user is mentioned via chat_mentions
-                  // For simplicity, check @mention_name in text
-                  const isMentioned =
-                    currentStaff?.mention_name &&
-                    msg.message
-                      .toLowerCase()
-                      .includes(`@${currentStaff.mention_name.toLowerCase()}`);
+      <Card className="flex-1 flex flex-col overflow-hidden min-h-0">
+        <CardContent className="flex-1 flex flex-col p-0 overflow-hidden min-h-0">
+          <ScrollArea
+            className="flex-1 overflow-hidden min-h-0"
+            ref={(node) => {
+              // Grab the Radix viewport element inside the ScrollArea root
+              if (node) {
+                const viewport = (node as HTMLElement).querySelector(
+                  '[data-slot="scroll-area-viewport"]',
+                );
+                scrollViewportRef.current = viewport as HTMLDivElement | null;
+              }
+            }}
+          >
+            <div className="p-6">
+              <div className="space-y-4">
+                {messages.length === 0 ? (
+                  <div className="text-center py-12 text-slate-400">
+                    <MessageCircle className="w-16 h-16 mx-auto mb-4 text-slate-200" />
+                    <p className="text-lg font-medium">
+                      Még nincsenek üzenetek
+                    </p>
+                    <p className="text-sm">
+                      Légy te az első, aki üzenetet küld!
+                    </p>
+                  </div>
+                ) : (
+                  messages.map((msg) => {
+                    const isOwnMessage = msg.sender === currentUser?.id;
+                    // Check if current user is mentioned via chat_mentions
+                    // For simplicity, check @mention_name in text
+                    const isMentioned =
+                      currentStaff?.mention_name &&
+                      msg.message
+                        .toLowerCase()
+                        .includes(
+                          `@${currentStaff.mention_name.toLowerCase()}`,
+                        );
 
-                  return (
-                    <div
-                      key={msg.id}
-                      className={`flex ${isOwnMessage ? "justify-end" : "justify-start"} group`}
-                    >
+                    return (
                       <div
-                        className={`max-w-[70%] rounded-lg p-3 ${
-                          msg.deleted
-                            ? "bg-slate-50 border border-slate-200 text-slate-400 italic"
-                            : isMentioned && !isOwnMessage
-                              ? "bg-yellow-50 border-2 border-yellow-300 text-slate-900 shadow-md"
-                              : isOwnMessage
-                                ? "bg-indigo-600 text-white"
-                                : "bg-slate-100 text-slate-900"
-                        }`}
+                        key={msg.id}
+                        className={`flex ${isOwnMessage ? "justify-end" : "justify-start"} group`}
                       >
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-semibold text-sm">
-                            {getStaffName(msg.sender)}
-                          </span>
-                          <span
-                            className={`text-xs ${
-                              msg.deleted
-                                ? "text-slate-400"
-                                : isMentioned && !isOwnMessage
-                                  ? "text-slate-500"
-                                  : isOwnMessage
-                                    ? "text-indigo-200"
-                                    : "text-slate-500"
-                            }`}
-                          >
-                            {/* chat_message doesn't have created_date in new schema, use id as proxy */}
-                          </span>
-                          {msg.deleted ? (
-                            <button
-                              onClick={() =>
-                                undeleteMessageMutation.mutate(msg.id)
-                              }
-                              className="text-xs underline hover:no-underline text-red-500 hover:text-red-600 border border-red-200 px-1.5 py-0.5 rounded"
+                        <div
+                          className={`max-w-[70%] rounded-lg p-3 ${
+                            msg.deleted
+                              ? "bg-slate-50 border border-slate-200 text-slate-400 italic"
+                              : isMentioned && !isOwnMessage
+                                ? "bg-yellow-50 border-2 border-yellow-300 text-slate-900 shadow-md"
+                                : isOwnMessage
+                                  ? "bg-indigo-600 text-white"
+                                  : "bg-slate-100 text-slate-900"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-semibold text-sm">
+                              {getStaffName(msg.sender)}
+                            </span>
+                            <span
+                              className={`text-xs ${
+                                msg.deleted
+                                  ? "text-slate-400"
+                                  : isMentioned && !isOwnMessage
+                                    ? "text-slate-500"
+                                    : isOwnMessage
+                                      ? "text-indigo-200"
+                                      : "text-slate-500"
+                              }`}
                             >
-                              visszavonás
-                            </button>
-                          ) : (
-                            isOwnMessage && (
+                              {/* chat_message doesn't have created_date in new schema, use id as proxy */}
+                            </span>
+                            {msg.deleted && isOwnMessage ? (
                               <button
                                 onClick={() =>
-                                  deleteMessageMutation.mutate(msg.id)
+                                  undeleteMessageMutation.mutate(msg.id)
                                 }
-                                className="text-xs opacity-0 group-hover:opacity-100 transition-opacity text-red-400 hover:text-red-600 border border-red-200 px-1.5 py-0.5 rounded"
+                                className="text-xs underline hover:no-underline text-red-500 hover:text-red-600 border border-red-200 px-1.5 py-0.5 rounded"
                               >
-                                törlés
+                                visszavonás
                               </button>
-                            )
-                          )}
+                            ) : (
+                              isOwnMessage && (
+                                <button
+                                  onClick={() =>
+                                    deleteMessageMutation.mutate(msg.id)
+                                  }
+                                  className="text-xs opacity-0 group-hover:opacity-100 transition-opacity text-red-400 hover:text-red-600 border border-red-200 px-1.5 py-0.5 rounded"
+                                >
+                                  törlés
+                                </button>
+                              )
+                            )}
+                          </div>
+                          <p className="text-sm break-words">
+                            {renderMessageText(
+                              msg.message,
+                              isOwnMessage,
+                              msg.deleted,
+                            )}
+                          </p>
                         </div>
-                        <p className="text-sm break-words">
-                          {renderMessageText(
-                            msg.message,
-                            isOwnMessage,
-                            msg.deleted,
-                          )}
-                        </p>
                       </div>
-                    </div>
-                  );
-                })
-              )}
-              <div ref={messagesEndRef} />
+                    );
+                  })
+                )}
+                <div ref={messagesEndRef} />
+              </div>
             </div>
           </ScrollArea>
 
