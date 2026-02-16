@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { usePermissions } from "@/hooks/use-permissions";
-import { format } from "date-fns";
 import { Send, MessageCircle, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -171,21 +170,22 @@ export default function ChatPage() {
 
   useEffect(() => {
     listChatMessages().then(setMessages);
-    const changes = supabase
-      .channel("schema-db-changes")
+
+    const channel = supabase.channel("global-chat");
+    const changes = channel
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "chat_message" },
         (payload) => {
           console.log(payload);
           if (payload.eventType == "INSERT")
-            setMessages([...messages, payload.new as ChatMessage]);
+            setMessages((prev) => [...prev, payload.new as ChatMessage]);
           else if (payload.eventType == "UPDATE") {
-            setMessages([
-              ...messages.slice(0, payload.new.id),
-              payload.new as ChatMessage,
-              ...messages.slice(payload.new.id + 1),
-            ]);
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === payload.new.id ? (payload.new as ChatMessage) : msg,
+              ),
+            );
           }
         },
       )
@@ -206,7 +206,31 @@ export default function ChatPage() {
     }, 100);
   }, []);
 
-  const uniqueUsers = new Set(messages.map((m) => m.sender)).size;
+  const [activeUsers, setActiveUsers] = useState(0);
+
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const channel = supabase.channel("chat-presence", {
+      config: { presence: { key: currentUser.id } },
+    });
+
+    channel
+      .on("presence", { event: "sync" }, () => {
+        const state = channel.presenceState();
+        setActiveUsers(Object.keys(state).length);
+      })
+      .subscribe(async (status) => {
+        if (status === "SUBSCRIBED") {
+          await channel.track({ user_id: currentUser.id });
+        }
+      });
+
+    return () => {
+      channel.untrack();
+      supabase.removeChannel(channel);
+    };
+  }, [supabase, currentUser]);
 
   const renderMessageText = (
     text: string,
@@ -257,7 +281,7 @@ export default function ChatPage() {
           </div>
           <div className="flex items-center gap-2 text-sm text-slate-600 bg-slate-100 px-4 py-2 rounded-lg">
             <Users className="w-4 h-4" />
-            <span>{uniqueUsers} aktív felhasználó</span>
+            <span>{activeUsers} aktív felhasználó</span>
           </div>
         </div>
       </div>
