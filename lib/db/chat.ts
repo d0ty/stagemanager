@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
-import type { ChatMessage, ChatMention } from "./types";
+import type { ChatMessage } from "./types";
 
 export async function listChatMessages(limit = 100): Promise<ChatMessage[]> {
   const supabase = createClient();
@@ -13,7 +13,7 @@ export async function listChatMessages(limit = 100): Promise<ChatMessage[]> {
 }
 
 export async function createChatMessage(
-  msg: Omit<ChatMessage, "id">
+  msg: Omit<ChatMessage, "id">,
 ): Promise<ChatMessage> {
   const supabase = createClient();
   const { data, error } = await supabase
@@ -27,7 +27,7 @@ export async function createChatMessage(
 
 export async function updateChatMessage(
   id: number,
-  updates: Partial<ChatMessage>
+  updates: Partial<ChatMessage>,
 ): Promise<ChatMessage> {
   const supabase = createClient();
   const { data, error } = await supabase
@@ -42,13 +42,15 @@ export async function updateChatMessage(
 
 export async function createChatMentions(
   messageId: number,
-  mentionedIds: string[]
+  mentionedIds: string[],
 ): Promise<void> {
   const supabase = createClient();
   const rows = mentionedIds.map((mentioned) => ({
     message: messageId,
     mentioned,
   }));
-  const { error } = await supabase.from("chat_mentions").insert(rows as Record<string, unknown>[]);
+  const { error } = await supabase
+    .from("chat_mentions")
+    .insert(rows as Record<string, unknown>[]);
   if (error) throw error;
 }

@@ -17,7 +17,7 @@ import {
   createChatMentions,
 } from "@/lib/db/chat";
 import { listStaff } from "@/lib/db/staff";
-import type { Staff } from "@/lib/db/types";
+import type { ChatMessage, Staff } from "@/lib/db/types";
 
 export default function ChatPage() {
   const { can } = usePermissions();
@@ -58,12 +58,6 @@ export default function ChatPage() {
     };
     fetchUser();
   }, [supabase.auth]);
-
-  const { data: messages = [] } = useQuery({
-    queryKey: ["chat-messages"],
-    queryFn: () => listChatMessages(100),
-    refetchInterval: 1000,
-  });
 
   const { data: allStaff = [] } = useQuery({
     queryKey: ["staff"],
@@ -134,7 +128,7 @@ export default function ChatPage() {
   const handleMentionSelect = (mentionName: string) => {
     const beforeMention = message.substring(0, mentionPosition);
     const afterMention = message.substring(
-      mentionPosition + 1 + mentionSearch.length
+      mentionPosition + 1 + mentionSearch.length,
     );
     setMessage(beforeMention + "@" + mentionName + " " + afterMention);
     setShowMentions(false);
@@ -151,7 +145,7 @@ export default function ChatPage() {
     while ((match = mentionRegex.exec(message)) !== null) {
       const mentionedName = match[1];
       const staff = allStaff.find(
-        (s) => s.mention_name?.toLowerCase() === mentionedName.toLowerCase()
+        (s) => s.mention_name?.toLowerCase() === mentionedName.toLowerCase(),
       );
       if (staff) {
         mentionedStaffIds.push(staff.id);
@@ -173,6 +167,35 @@ export default function ChatPage() {
     );
   });
 
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+
+  useEffect(() => {
+    listChatMessages().then(setMessages);
+    const changes = supabase
+      .channel("schema-db-changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "chat_message" },
+        (payload) => {
+          console.log(payload);
+          if (payload.eventType == "INSERT")
+            setMessages([...messages, payload.new as ChatMessage]);
+          else if (payload.eventType == "UPDATE") {
+            setMessages([
+              ...messages.slice(0, payload.new.id),
+              payload.new as ChatMessage,
+              ...messages.slice(payload.new.id + 1),
+            ]);
+          }
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(changes);
+    };
+  }, [supabase, messages, setMessages]);
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -188,7 +211,7 @@ export default function ChatPage() {
   const renderMessageText = (
     text: string,
     isOwnMessage: boolean,
-    msgDeleted: boolean | null
+    msgDeleted: boolean | null,
   ) => {
     if (msgDeleted) return <span className="italic">Törölt üzenet</span>;
 
@@ -197,7 +220,7 @@ export default function ChatPage() {
       if (part.startsWith("@")) {
         const mentionedName = part.slice(1);
         const staff = allStaff.find(
-          (s) => s.mention_name?.toLowerCase() === mentionedName.toLowerCase()
+          (s) => s.mention_name?.toLowerCase() === mentionedName.toLowerCase(),
         );
         const isSelf = staff?.id === currentUser?.id;
         return (
@@ -246,12 +269,8 @@ export default function ChatPage() {
               {messages.length === 0 ? (
                 <div className="text-center py-12 text-slate-400">
                   <MessageCircle className="w-16 h-16 mx-auto mb-4 text-slate-200" />
-                  <p className="text-lg font-medium">
-                    Még nincsenek üzenetek
-                  </p>
-                  <p className="text-sm">
-                    Légy te az első, aki üzenetet küld!
-                  </p>
+                  <p className="text-lg font-medium">Még nincsenek üzenetek</p>
+                  <p className="text-sm">Légy te az első, aki üzenetet küld!</p>
                 </div>
               ) : (
                 messages.map((msg) => {
@@ -262,9 +281,7 @@ export default function ChatPage() {
                     currentStaff?.mention_name &&
                     msg.message
                       .toLowerCase()
-                      .includes(
-                        `@${currentStaff.mention_name.toLowerCase()}`
-                      );
+                      .includes(`@${currentStaff.mention_name.toLowerCase()}`);
 
                   return (
                     <div
@@ -325,7 +342,7 @@ export default function ChatPage() {
                           {renderMessageText(
                             msg.message,
                             isOwnMessage,
-                            msg.deleted
+                            msg.deleted,
                           )}
                         </p>
                       </div>
