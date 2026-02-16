@@ -164,7 +164,7 @@ export default function Chat({
     }
 
     sendMessageMutation.mutate({
-      message: message.trim(),
+      message: message,
       mentionedStaffIds,
     });
   };
@@ -283,7 +283,7 @@ export default function Chat({
         return (
           <span
             key={i}
-            className={`font-bold ${
+            className={`font-bold whitespace-pre-line ${
               isSelf
                 ? "bg-yellow-200 text-slate-900 px-1 rounded"
                 : isOwnMessage
@@ -295,7 +295,11 @@ export default function Chat({
           </span>
         );
       }
-      return <span key={i}>{part}</span>;
+      return (
+        <span key={i} className="whitespace-pre-line ">
+          {part}
+        </span>
+      );
     });
   };
 
@@ -439,7 +443,7 @@ export default function Chat({
                 target.style.height = Math.min(target.scrollHeight, 120) + "px";
               }}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
+                if (e.key === "Enter" && e.ctrlKey) {
                   e.preventDefault();
                   handleSendMessage(e);
                 }
