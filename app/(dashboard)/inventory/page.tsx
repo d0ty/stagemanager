@@ -163,7 +163,13 @@ export default function InventoryPage() {
     );
   };
 
-  const getActiveLoans = () => loans.filter((l) => l.status === "aktiv");
+  const getActiveLoans = () =>
+    loans.filter((l) => {
+      return (
+        loanItems.filter((li) => li.loan == l.id).length > 0 &&
+        l.status == "aktiv"
+      );
+    });
   const getHistoryLoans = () => loans.filter((l) => l.status === "lezart");
 
   // Mutations

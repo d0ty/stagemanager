@@ -19,7 +19,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createProgram } from "@/lib/db/program";
 import { listStaff } from "@/lib/db/staff";
-import type { ProgramState } from "@/lib/db/types";
+import type { EquipmentInventory, Program, ProgramState } from "@/lib/db/types";
+import { createEquipmentLoan } from "@/lib/db";
 
 export default function NewProgramPage() {
   const router = useRouter();
@@ -40,7 +41,25 @@ export default function NewProgramPage() {
   });
 
   const createMutation = useMutation({
-    mutationFn: createProgram,
+    mutationFn: (prog: Omit<Program, "id">) =>
+      createProgram(prog).then((prog_id) => {
+        ["foh", "stage", "egyeb"].forEach((inv) =>
+          createEquipmentLoan({
+            start_date: new Date().toLocaleString(),
+            expected_return_date: prog_id.date,
+            return_date: null,
+            inventory: inv as EquipmentInventory,
+            status: "aktiv",
+            taken_by: {
+              type: "staff",
+              staff: prog_id.leader ?? undefined,
+              program: prog_id.id,
+            },
+            notes: `Taken for ${prog_id.description} to ${inv}`,
+          }),
+        );
+        return prog_id;
+      }),
     onSuccess: (data) => {
       router.push(`/programs/${data.id}`);
     },
