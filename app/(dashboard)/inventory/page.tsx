@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { usePermissions } from "@/hooks/use-permissions";
 import {
@@ -70,6 +70,8 @@ import type {
   EquipmentLoanItem,
   EquipmentCategory,
   EquipmentStatus,
+  EquipmentLoanTakerType,
+  EquipmentLoanTaker,
 } from "@/lib/db/types";
 
 export default function InventoryPage() {
@@ -84,13 +86,18 @@ export default function InventoryPage() {
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
   const [sortField, setSortField] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
-  const [equipmentSortField, setEquipmentSortField] = useState<string | null>(null);
-  const [equipmentSortDirection, setEquipmentSortDirection] = useState<"asc" | "desc">("asc");
+  const [equipmentSortField, setEquipmentSortField] = useState<string | null>(
+    null,
+  );
+  const [equipmentSortDirection, setEquipmentSortDirection] = useState<
+    "asc" | "desc"
+  >("asc");
 
   // New item form state
   const [newItemTypeId, setNewItemTypeId] = useState<string>("");
   const [newItemSerial, setNewItemSerial] = useState("");
-  const [newItemStatus, setNewItemStatus] = useState<EquipmentStatus>("elerheto");
+  const [newItemStatus, setNewItemStatus] =
+    useState<EquipmentStatus>("elerheto");
   const [newItemNotes, setNewItemNotes] = useState("");
 
   // Queries
@@ -152,7 +159,7 @@ export default function InventoryPage() {
     const activeLoans = loans.filter((l) => l.status === "aktiv");
     const activeLoanIds = new Set(activeLoans.map((l) => l.id));
     return loanItems.some(
-      (li) => li.item === itemId && activeLoanIds.has(li.loan)
+      (li) => li.item === itemId && activeLoanIds.has(li.loan),
     );
   };
 
@@ -197,13 +204,8 @@ export default function InventoryPage() {
   });
 
   const updateItemMutation = useMutation({
-    mutationFn: ({
-      id,
-      data,
-    }: {
-      id: number;
-      data: Partial<EquipmentItem>;
-    }) => updateEquipmentItem(id, data),
+    mutationFn: ({ id, data }: { id: number; data: Partial<EquipmentItem> }) =>
+      updateEquipmentItem(id, data),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ["equipment-items"] }),
   });
@@ -216,9 +218,10 @@ export default function InventoryPage() {
 
   const createLoanMutation = useMutation({
     mutationFn: async (data: {
-      takenBy: Record<string, unknown>;
+      takenBy: EquipmentLoanTakerType;
       expectedReturnDate: string | null;
       itemIds: number[];
+      notes: string;
     }) => {
       const loan = await createEquipmentLoan({
         start_date: new Date().toISOString(),
@@ -304,7 +307,7 @@ export default function InventoryPage() {
         serial,
         status: newItemStatus,
         notes: newItemNotes || null,
-      })
+      }),
     );
 
     Promise.all(promises).then(() => {
@@ -319,7 +322,6 @@ export default function InventoryPage() {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const staffId = formData.get("staff_id") as string;
-    const staff = staffList.find((s) => s.id === staffId);
     const programId = formData.get("program_id") as string;
     const expectedReturn = formData.get("expected_return_date") as string;
     const notes = formData.get("notes") as string;
@@ -327,17 +329,16 @@ export default function InventoryPage() {
 
     createLoanMutation.mutate({
       takenBy: {
-        staff_id: staffId === "external" ? null : staffId,
-        staff_name: staffId === "external" ? externalName : (staff?.name ?? ""),
-        program_id: programId && programId !== "none" ? programId : null,
-        notes: notes || null,
-        is_external: staffId === "external",
-        external_name: staffId === "external" ? externalName : null,
+        type: staffId === "external" ? "external" : "staff",
+        staff: staffId === "external" ? undefined : staffId,
+        name: staffId === "external" ? externalName : undefined,
+        program: programId && programId !== "none" ? programId : null,
       },
       expectedReturnDate: expectedReturn
         ? new Date(expectedReturn).toISOString()
         : null,
       itemIds: selectedItems,
+      notes: notes || null,
     });
   };
 
@@ -353,7 +354,7 @@ export default function InventoryPage() {
   const handleEquipmentSort = (field: string) => {
     if (equipmentSortField === field) {
       setEquipmentSortDirection(
-        equipmentSortDirection === "asc" ? "desc" : "asc"
+        equipmentSortDirection === "asc" ? "desc" : "asc",
       );
     } else {
       setEquipmentSortField(field);
@@ -365,7 +366,7 @@ export default function InventoryPage() {
     setSelectedItems((prev) =>
       prev.includes(itemId)
         ? prev.filter((id) => id !== itemId)
-        : [...prev, itemId]
+        : [...prev, itemId],
     );
   };
 
@@ -377,9 +378,8 @@ export default function InventoryPage() {
     (item) =>
       item.status === "elerheto" &&
       !isItemLoaned(item.id) &&
-      !selectedItems.includes(item.id)
+      !selectedItems.includes(item.id),
   );
-
   // Items enriched with type info for the inventory table
   const enrichedItems = equipmentItems.map((item) => {
     const type = equipmentTypes.find((t) => t.id === item.type);
@@ -396,7 +396,7 @@ export default function InventoryPage() {
     (item) =>
       item.typeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.serial.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (item.notes?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false)
+      (item.notes?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false),
   );
 
   const sortedItems = [...filteredItems].sort((a, b) => {
@@ -448,13 +448,16 @@ export default function InventoryPage() {
   const [isExternal, setIsExternal] = useState(false);
 
   const getLoanTakenBy = (
-    loan: EquipmentLoan
+    loan: EquipmentLoan,
   ): { staffName: string; isExternal: boolean; notes: string } => {
-    const tb = loan.taken_by as Record<string, unknown> | null;
+    const tb = loan.taken_by as EquipmentLoanTaker | null;
     return {
-      staffName: (tb?.staff_name as string) ?? (tb?.external_name as string) ?? "Ismeretlen",
-      isExternal: (tb?.is_external as boolean) ?? false,
-      notes: (tb?.notes as string) ?? "",
+      staffName:
+        (tb?.type == "external"
+          ? tb?.name
+          : staffList.find((s) => s.id === tb?.staff)?.name) ?? "Ismeretlen",
+      isExternal: tb?.type === "external",
+      notes: (loan.notes as string) ?? "",
     };
   };
 
@@ -466,9 +469,7 @@ export default function InventoryPage() {
             <Box className="w-8 h-8 text-indigo-600" />
             Leltár
           </h1>
-          <p className="text-slate-500">
-            Eszközök nyilvántartása és kiadása
-          </p>
+          <p className="text-slate-500">Eszközök nyilvántartása és kiadása</p>
         </div>
         <div className="flex gap-2 flex-wrap">
           {can("equipment", "create") && (
@@ -489,15 +490,10 @@ export default function InventoryPage() {
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>
-                      {editingType
-                        ? "Típus Szerkesztése"
-                        : "Új Eszköztípus"}
+                      {editingType ? "Típus Szerkesztése" : "Új Eszköztípus"}
                     </DialogTitle>
                   </DialogHeader>
-                  <form
-                    onSubmit={handleCreateType}
-                    className="space-y-4 mt-4"
-                  >
+                  <form onSubmit={handleCreateType} className="space-y-4 mt-4">
                     <div className="grid gap-2">
                       <Label>Megnevezés</Label>
                       <Input
@@ -511,9 +507,7 @@ export default function InventoryPage() {
                       <Label>Kategória</Label>
                       <Select
                         name="category"
-                        defaultValue={
-                          editingType?.category ?? "hangtechnika"
-                        }
+                        defaultValue={editingType?.category ?? "hangtechnika"}
                       >
                         <SelectTrigger>
                           <SelectValue />
@@ -560,10 +554,7 @@ export default function InventoryPage() {
                   <DialogHeader>
                     <DialogTitle>Új Eszköz Hozzáadása</DialogTitle>
                   </DialogHeader>
-                  <form
-                    onSubmit={handleCreateItem}
-                    className="space-y-4 mt-4"
-                  >
+                  <form onSubmit={handleCreateItem} className="space-y-4 mt-4">
                     <div className="grid gap-2">
                       <Label>Eszköztípus</Label>
                       <Select
@@ -584,9 +575,7 @@ export default function InventoryPage() {
                       </Select>
                     </div>
                     <div className="grid gap-2">
-                      <Label>
-                        Szériaszám(ok) - soronként egy
-                      </Label>
+                      <Label>Szériaszám(ok) - soronként egy</Label>
                       <Textarea
                         value={newItemSerial}
                         onChange={(e) => setNewItemSerial(e.target.value)}
@@ -660,10 +649,7 @@ export default function InventoryPage() {
                 <DialogHeader>
                   <DialogTitle>Eszközök Kiadása</DialogTitle>
                 </DialogHeader>
-                <form
-                  onSubmit={handleCreateLoan}
-                  className="space-y-4 mt-4"
-                >
+                <form onSubmit={handleCreateLoan} className="space-y-4 mt-4">
                   {/* Selected items */}
                   <div className="grid gap-2">
                     <Label>
@@ -684,9 +670,7 @@ export default function InventoryPage() {
                             >
                               <div>
                                 <span className="font-medium text-sm">
-                                  {item
-                                    ? getTypeName(item.type)
-                                    : "Ismeretlen"}
+                                  {item ? getTypeName(item.type) : "Ismeretlen"}
                                 </span>
                                 <span className="text-xs text-slate-500 ml-2">
                                   ({item?.serial ?? "?"})
@@ -725,10 +709,7 @@ export default function InventoryPage() {
                       </SelectTrigger>
                       <SelectContent>
                         {availableItems.map((item) => (
-                          <SelectItem
-                            key={item.id}
-                            value={item.id.toString()}
-                          >
+                          <SelectItem key={item.id} value={item.id.toString()}>
                             {getTypeName(item.type)} - {item.serial}
                           </SelectItem>
                         ))}
@@ -770,8 +751,7 @@ export default function InventoryPage() {
                   {isExternal && (
                     <div className="grid gap-2 animate-in fade-in">
                       <Label>
-                        Külsős neve{" "}
-                        <span className="text-red-500">*</span>
+                        Külsős neve <span className="text-red-500">*</span>
                       </Label>
                       <Input
                         name="external_name"
@@ -804,10 +784,7 @@ export default function InventoryPage() {
                   {/* Expected return */}
                   <div className="grid gap-2">
                     <Label>Várható visszavétel (Opcionális)</Label>
-                    <Input
-                      type="date"
-                      name="expected_return_date"
-                    />
+                    <Input type="date" name="expected_return_date" />
                   </div>
 
                   <div className="grid gap-2">
@@ -853,18 +830,17 @@ export default function InventoryPage() {
                   onClick={() => {
                     if (
                       confirm(
-                        `Biztosan visszaveszel minden eszközt? (${activeLoans.length} kölcsönzés)`
+                        `Biztosan visszaveszel minden eszközt? (${activeLoans.length} kölcsönzés)`,
                       )
                     ) {
                       returnAllLoansMutation.mutate(
-                        activeLoans.map((l) => l.id)
+                        activeLoans.map((l) => l.id),
                       );
                     }
                   }}
                   className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
                 >
-                  <CheckCircle2 className="w-4 h-4 mr-2" /> Minden
-                  Visszavétele
+                  <CheckCircle2 className="w-4 h-4 mr-2" /> Minden Visszavétele
                 </Button>
               )}
             </CardHeader>
@@ -907,8 +883,11 @@ export default function InventoryPage() {
                 <TableBody>
                   {sortedActiveLoans.map((loan) => {
                     const items = getItemsForLoan(loan.id);
-                    const { staffName, isExternal: ext, notes } =
-                      getLoanTakenBy(loan);
+                    const {
+                      staffName,
+                      isExternal: ext,
+                      notes,
+                    } = getLoanTakenBy(loan);
                     return (
                       <TableRow key={loan.id}>
                         <TableCell className="font-medium">
@@ -948,7 +927,7 @@ export default function InventoryPage() {
                           {loan.start_date
                             ? format(
                                 new Date(loan.start_date),
-                                "dd/MM/yyyy HH:mm"
+                                "dd/MM/yyyy HH:mm",
                               )
                             : "-"}
                         </TableCell>
@@ -957,7 +936,7 @@ export default function InventoryPage() {
                             <span className="text-sm text-slate-700">
                               {format(
                                 new Date(loan.expected_return_date),
-                                "dd/MM/yyyy"
+                                "dd/MM/yyyy",
                               )}
                             </span>
                           ) : (
@@ -973,12 +952,9 @@ export default function InventoryPage() {
                               size="sm"
                               variant="secondary"
                               className="hover:bg-emerald-100 hover:text-emerald-700"
-                              onClick={() =>
-                                returnLoanMutation.mutate(loan.id)
-                              }
+                              onClick={() => returnLoanMutation.mutate(loan.id)}
                             >
-                              <RotateCcw className="w-4 h-4 mr-2" />{" "}
-                              Visszavétel
+                              <RotateCcw className="w-4 h-4 mr-2" /> Visszavétel
                             </Button>
                           )}
                         </TableCell>
@@ -1173,7 +1149,7 @@ export default function InventoryPage() {
                   <TableBody>
                     {equipmentTypes.map((type) => {
                       const itemCount = equipmentItems.filter(
-                        (i) => i.type === type.id
+                        (i) => i.type === type.id,
                       ).length;
                       return (
                         <TableRow key={type.id}>
@@ -1210,7 +1186,7 @@ export default function InventoryPage() {
                                   onClick={() => {
                                     if (
                                       confirm(
-                                        "Biztosan törlöd ezt a típust? Az összes hozzá tartozó eszköz is törlődik."
+                                        "Biztosan törlöd ezt a típust? Az összes hozzá tartozó eszköz is törlődik.",
                                       )
                                     )
                                       deleteTypeMutation.mutate(type.id);
@@ -1262,7 +1238,7 @@ export default function InventoryPage() {
                     .sort(
                       (a, b) =>
                         new Date(b.start_date ?? 0).getTime() -
-                        new Date(a.start_date ?? 0).getTime()
+                        new Date(a.start_date ?? 0).getTime(),
                     )
                     .map((loan) => {
                       const items = getItemsForLoan(loan.id);
@@ -1321,7 +1297,7 @@ export default function InventoryPage() {
                                 {loan.start_date
                                   ? format(
                                       new Date(loan.start_date),
-                                      "dd/MM/yyyy HH:mm"
+                                      "dd/MM/yyyy HH:mm",
                                     )
                                   : "-"}
                               </span>
@@ -1330,7 +1306,7 @@ export default function InventoryPage() {
                                   V:{" "}
                                   {format(
                                     new Date(loan.return_date),
-                                    "dd/MM/yyyy HH:mm"
+                                    "dd/MM/yyyy HH:mm",
                                   )}
                                 </span>
                               )}

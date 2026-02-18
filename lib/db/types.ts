@@ -137,6 +137,15 @@ export interface EquipmentItem {
   notes: string | null;
 }
 
+export type EquipmentLoanTakerType = "external" | "staff";
+
+export interface EquipmentLoanTaker {
+  type: EquipmentLoanTakerType;
+  staff?: string;
+  program?: number;
+  name?: string;
+}
+
 export interface EquipmentLoan {
   id: number;
   start_date: string | null;
@@ -144,7 +153,8 @@ export interface EquipmentLoan {
   return_date: string | null;
   inventory: EquipmentInventory | null;
   status: LoanStatus | null;
-  taken_by: Record<string, unknown> | null;
+  taken_by: EquipmentLoanTaker | null;
+  notes: string | null;
 }
 
 export interface EquipmentLoanItem {
