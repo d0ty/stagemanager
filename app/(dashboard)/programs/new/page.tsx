@@ -8,7 +8,6 @@ import { ArrowLeft, CalendarDays, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -77,9 +76,9 @@ export default function NewProgramPage() {
       description: formData.description || null,
       status: formData.status,
       leader: formData.leader || null,
-      foh_list: formData.foh_list || null,
-      stage_list: formData.stage_list || null,
-      other_list: formData.other_list || null,
+      foh_list: null,
+      stage_list: null,
+      other_list: null,
     };
 
     createMutation.mutate(programData);
@@ -197,48 +196,6 @@ export default function NewProgramPage() {
                 </Select>
               </div>
             </div>
-
-            {/* Equipment Lists */}
-            <div className="space-y-4 pt-4 border-t">
-              <h3 className="font-semibold text-sm text-slate-700">
-                Eszközlisták (Opcionális - később is szerkeszthető)
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="foh_list">FOH Lista</Label>
-                  <Textarea
-                    id="foh_list"
-                    placeholder="FOH eszközök listája..."
-                    value={formData.foh_list}
-                    onChange={(e) => handleChange("foh_list", e.target.value)}
-                    className="min-h-[120px] font-mono text-xs"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="stage_list">Stage Lista</Label>
-                  <Textarea
-                    id="stage_list"
-                    placeholder="Stage eszközök listája..."
-                    value={formData.stage_list}
-                    onChange={(e) => handleChange("stage_list", e.target.value)}
-                    className="min-h-[120px] font-mono text-xs"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="other_list">Egyéb Lista</Label>
-                  <Textarea
-                    id="other_list"
-                    placeholder="Egyéb eszközök listája..."
-                    value={formData.other_list}
-                    onChange={(e) => handleChange("other_list", e.target.value)}
-                    className="min-h-[120px] font-mono text-xs"
-                  />
-                </div>
-              </div>
-            </div>
-
             {/* Actions */}
             <div className="flex justify-end gap-3 pt-4 border-t">
               <Link href="/programs">
