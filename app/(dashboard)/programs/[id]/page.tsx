@@ -6,6 +6,7 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { hu } from "date-fns/locale";
 import {
+  AlertCircle,
   ArrowLeft,
   Calendar,
   MapPin,
@@ -26,6 +27,7 @@ import {
   LayoutDashboard,
   Download,
   Upload,
+  CircleMinus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -72,8 +74,20 @@ import {
 } from "@/lib/db/program-file";
 import { listStaff } from "@/lib/db/staff";
 import { usePermissions } from "@/hooks/use-permissions";
-import type { CrewPosition } from "@/lib/db/types";
+import type {
+  CrewPosition,
+  EquipmentInventory,
+  EquipmentLoan,
+} from "@/lib/db/types";
 import Chat from "@/components/chat";
+import {
+  createEquipmentLoanItem,
+  deleteLoanItem,
+  getEquipmentLoansByProgram,
+  listEquipmentItems,
+  listEquipmentLoanItems,
+  listEquipmentTypes,
+} from "@/lib/db";
 
 export default function ProgramDetailPage({
   params,
@@ -89,11 +103,28 @@ export default function ProgramDetailPage({
   const [isRehearsalDialogOpen, setIsRehearsalDialogOpen] = useState(false);
   const [editingRehearsal, setEditingRehearsal] = useState<any>(null);
   const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
+  const [isLoanDialogOpen, setIsLoanDialogOpen] = useState(false);
   const [taskType, setTaskType] = useState<"sound" | "light" | null>(null);
   const [editingTask, setEditingTask] = useState<any>(null);
   const [fohList, setFohList] = useState("");
   const [stageList, setStageList] = useState("");
   const [otherList, setOtherList] = useState("");
+
+  const [addingItems, setAddingItems] = useState({
+    foh: [],
+    stage: [],
+    egyeb: [],
+  });
+  const [deletingItems, setDeletingItems] = useState({
+    foh: [],
+    stage: [],
+    egyeb: [],
+  });
+
+  const resetLoanState = () => {
+    setAddingItems({ foh: [], stage: [], egyeb: [] });
+    setDeletingItems({ foh: [], stage: [], egyeb: [] });
+  };
 
   const {
     data: program,
@@ -133,6 +164,32 @@ export default function ProgramDetailPage({
     queryFn: () => getProgramFiles(programId),
     enabled: !isNaN(programId),
   });
+
+  const { data: loans = {} } = useQuery({
+    queryKey: ["loans", programId],
+    queryFn: () => getEquipmentLoansByProgram(programId),
+    enabled: !isNaN(programId),
+  });
+
+  const { data: loan_items = [] } = useQuery({
+    queryKey: ["loan_items", programId],
+    queryFn: () => listEquipmentLoanItems(),
+  });
+
+  const { data: items = [] } = useQuery({
+    queryKey: ["items", programId],
+    queryFn: () => listEquipmentItems(),
+  });
+
+  const { data: equipmentTypes = [] } = useQuery({
+    queryKey: ["equipment-types"],
+    queryFn: listEquipmentTypes,
+  });
+
+  const getTypeName = (typeId: number): string => {
+    const t = equipmentTypes.find((et) => et.id === typeId);
+    return t?.name ?? "Ismeretlen";
+  };
 
   // Mutations
   const createCrewMutation = useMutation({
@@ -260,6 +317,20 @@ export default function ProgramDetailPage({
     return s?.name ?? "-";
   };
 
+  const getItemsOfInventory = (inv: EquipmentInventory) => {
+    const loan: EquipmentLoan = loans[inv] as EquipmentLoan;
+    return loan_items.filter((li) => li.loan == loan.id);
+  };
+
+  const getAvailableItems = () => {
+    const loan = new Set(Object.entries(loans).map((l) => l[1].id));
+    const loan_item_set = new Set(
+      loan_items.filter((li) => loan.has(li.loan)).map((li) => li.item),
+    );
+    return items.filter((i) => !loan_item_set.has(i.id));
+  };
+
+  console.log(items);
   const handleAddCrewMember = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -338,6 +409,32 @@ export default function ProgramDetailPage({
       }
     }
   };
+
+  const handleLoanChanges = async () => {
+    await Promise.all(
+      Object.entries(addingItems).map(async (i) => {
+        await Promise.all(
+          i[1].map(
+            async (item) =>
+              await createEquipmentLoanItem({
+                loan: loans[i[0]].id,
+                item: item.id,
+              }),
+          ),
+        );
+      }),
+    );
+    await Promise.all(
+      Object.entries(deletingItems).map(async (i) => {
+        await Promise.all(
+          i[1].map(async (item) => await deleteLoanItem(item.id)),
+        );
+      }),
+    );
+    setIsLoanDialogOpen(false);
+    resetLoanState();
+  };
+
   const [activeUsers, setActiveUsers] = useState(0);
 
   if (isNaN(programId))
@@ -579,6 +676,130 @@ export default function ProgramDetailPage({
               </CardTitle>
             </CardHeader>
             <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="foh_list" className="text-base font-semibold">
+                    FOH (Front of House)
+                  </Label>
+                  <div className="bg-[#e5e5e54d] rounded-sm">
+                    {getItemsOfInventory("foh").map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center gap-2 p-2"
+                      >
+                        <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                        <span>
+                          {getTypeName(
+                            items.find((i) => i.id == item.item)?.type ?? 0,
+                          )}
+                        </span>
+                        <span className="text-xs font-mono text-slate-500 whitespace-break-spaces">
+                          SN: {items.find((i) => i.id == item.item)?.serial}
+                        </span>
+                      </div>
+                    ))}
+                    {getItemsOfInventory("foh").length == 0 && (
+                      <div className="flex items-center gap2">
+                        <span className="text-xs font-mono text-slate-500">
+                          Még nincs elem ebben a raktárban
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <Button
+                    onClick={(_) => {
+                      setIsLoanDialogOpen(true);
+                    }}
+                    className="border-indigo-600 border-2  bg-white hover:bg-indigo-700 text-indigo-600 hover:text-white w-full"
+                  >
+                    <Plus /> Eszközök hozzáadása
+                  </Button>
+                </div>
+
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="stage_list"
+                    className="text-base font-semibold"
+                  >
+                    Stage (Színpad)
+                  </Label>
+                  <div className="bg-[#e5e5e54d] rounded-sm">
+                    {getItemsOfInventory("stage").map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center gap-2 p-2"
+                      >
+                        <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                        <span>
+                          {getTypeName(
+                            items.find((i) => i.id == item.item)?.type ?? 0,
+                          )}
+                        </span>
+                        <span className="text-xs font-mono text-slate-500 whitespace-break-spaces">
+                          SN: {items.find((i) => i.id == item.item)?.serial}
+                        </span>
+                      </div>
+                    ))}
+                    {getItemsOfInventory("stage").length == 0 && (
+                      <div className="flex items-center gap2">
+                        <span className="text-xs font-mono text-slate-500">
+                          Még nincs elem ebben a raktárban
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <Button
+                    onClick={(_) => {
+                      setIsLoanDialogOpen(true);
+                    }}
+                    className="border-indigo-600 border-2  bg-white hover:bg-indigo-700 text-indigo-600 hover:text-white w-full"
+                  >
+                    <Plus /> Eszközök hozzáadása
+                  </Button>
+                </div>
+
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="other_list"
+                    className="text-base font-semibold"
+                  >
+                    Egyéb
+                  </Label>
+                  <div className="bg-[#e5e5e54d] rounded-sm">
+                    {getItemsOfInventory("egyeb").map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center gap-2 p-2"
+                      >
+                        <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                        <span>
+                          {getTypeName(
+                            items.find((i) => i.id == item.item)?.type ?? 0,
+                          )}
+                        </span>
+                        <span className="text-xs font-mono text-slate-500 whitespace-break-spaces">
+                          SN: {items.find((i) => i.id == item.item)?.serial}
+                        </span>
+                      </div>
+                    ))}
+                    {getItemsOfInventory("egyeb").length == 0 && (
+                      <div className="flex items-center gap2">
+                        <span className="text-xs font-mono text-slate-500">
+                          Még nincs elem ebben a raktárban
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <Button
+                    onClick={(_) => {
+                      setIsLoanDialogOpen(true);
+                    }}
+                    className="border-indigo-600 border-2  bg-white hover:bg-indigo-700 text-indigo-600 hover:text-white w-full"
+                  >
+                    <Plus /> Eszközök hozzáadása
+                  </Button>
+                </div>
+              </div>
               <p className="text-sm text-slate-600 mb-6">
                 Írd be az egyes kategóriákhoz tartozó eszközöket. Minden sor egy
                 eszközt jelöl.
@@ -1424,6 +1645,100 @@ export default function ProgramDetailPage({
         </DialogContent>
       </Dialog>
 
+      {/* Loan editor */}
+      <Dialog open={isLoanDialogOpen} onOpenChange={setIsLoanDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Eszközök kezelése</DialogTitle>
+          </DialogHeader>
+          <div className="flex jutify-between gap-5">
+            {["foh", "stage", "egyeb"].map((inv) => (
+              <div key={inv} className="space-y-2 block">
+                <Label
+                  htmlFor={`inv-${inv}`}
+                  className="text-base font-semibold"
+                >
+                  {inv}
+                </Label>
+                <div className="bg-[#e5e5e54d] rounded-sm">
+                  {getItemsOfInventory(inv).map((item) => (
+                    <div key={item.id} className="flex items-center gap-2 p-2">
+                      <span>
+                        {getTypeName(
+                          items.find((i) => i.id == item.item)?.type ?? 0,
+                        )}
+                      </span>
+                      <span className="text-xs font-mono text-slate-500 whitespace-break-spaces">
+                        SN: {items.find((i) => i.id == item.item)?.serial}
+                      </span>
+                      <CircleMinus
+                        className={`w-4 h-4 text-${deletingItems[inv].includes(item) ? "stone" : "red"}-500 flex-shrink-0`}
+                        onClick={() => {
+                          if (!deletingItems[inv].includes(item)) {
+                            setDeletingItems({
+                              ...deletingItems,
+                              [inv]: [...deletingItems[inv], item],
+                            });
+                          }
+                        }}
+                      />
+                    </div>
+                  ))}
+                  {getAvailableItems().map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-center gap-2 p-2"
+                      onClick={() => {
+                        if (!addingItems[inv].includes(item))
+                          setAddingItems({
+                            ...addingItems,
+                            [inv]: [...addingItems[inv], item],
+                          });
+                      }}
+                    >
+                      <span>{getTypeName(item.type)}</span>
+                      <span className="text-xs font-mono text-slate-500">
+                        SN: {item.serial}
+                      </span>
+                      {addingItems[inv].includes(item) && (
+                        <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+                      )}
+                    </div>
+                  ))}
+                  {getAvailableItems().length == 0 && (
+                    <div className="flex items-center gap2">
+                      <span className="text-xs font-mono text-slate-500">
+                        Mindent használsz már...
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                resetLoanState();
+                setIsLoanDialogOpen(false);
+              }}
+            >
+              Mégse
+            </Button>
+            <Button
+              onClick={handleLoanChanges}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+              disabled={
+                createTaskMutation.isPending || updateTaskMutation.isPending
+              }
+            >
+              Mentés
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       {/* Task Dialog */}
       <Dialog open={isTaskDialogOpen} onOpenChange={setIsTaskDialogOpen}>
         <DialogContent>

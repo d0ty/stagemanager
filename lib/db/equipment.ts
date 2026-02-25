@@ -5,6 +5,7 @@ import type {
   EquipmentLoan,
   EquipmentLoanItem,
   EquipmentCategory,
+  EquipmentInventory,
 } from "./types";
 
 export async function listEquipmentTypes(): Promise<EquipmentType[]> {
@@ -65,6 +66,27 @@ export async function listEquipmentLoans(
   });
   if (error) throw error;
   return (data ?? []) as EquipmentLoan[];
+}
+
+export async function getEquipmentLoansByProgram(
+  program: number,
+): Promise<Record<EquipmentInventory, EquipmentLoan>> {
+  const supabase = createClient();
+  let query = supabase
+    .from("equipment_loan")
+    .select()
+    .eq("taken_by->program", program);
+  const { data, error } = await query.order("start_date", {
+    ascending: false,
+    nullsFirst: false,
+  });
+  console.log(data, program);
+  if (error) throw error;
+  return Object.fromEntries(
+    (["foh", "stage", "egyeb"] as EquipmentInventory[]).map((inv) => {
+      return [inv, data.find((l) => l.inventory == inv)];
+    }),
+  );
 }
 
 export async function listEquipmentLoanItems(): Promise<EquipmentLoanItem[]> {
@@ -141,6 +163,15 @@ export async function deleteLoanItemsByLoan(loanId: number): Promise<void> {
     .from("equipment_loan_item")
     .delete()
     .eq("loan", loanId);
+  if (error) throw error;
+}
+
+export async function deleteLoanItem(loanItemId: number): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("equipment_loan_item")
+    .delete()
+    .eq("id", loanItemId);
   if (error) throw error;
 }
 
