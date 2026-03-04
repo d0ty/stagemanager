@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { createProgramFolder } from "@/lib/gdrive";
 import type { Program } from "./types";
 
 export async function listPrograms(orderBy = "date"): Promise<Program[]> {
@@ -26,7 +27,7 @@ export async function getProgram(id: number): Promise<Program | null> {
 }
 
 export async function createProgram(
-  program: Omit<Program, "id">
+  program: Omit<Program, "id">,
 ): Promise<Program> {
   const supabase = createClient();
   const { data, error } = await supabase
@@ -35,12 +36,14 @@ export async function createProgram(
     .select()
     .single();
   if (error) throw error;
+
+  await createProgramFolder(data as Program);
   return data as Program;
 }
 
 export async function updateProgram(
   id: number,
-  updates: Partial<Program>
+  updates: Partial<Program>,
 ): Promise<Program> {
   const supabase = createClient();
   const { data, error } = await supabase
