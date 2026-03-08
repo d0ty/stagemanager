@@ -224,7 +224,7 @@ export default function InventoryPage() {
 
   const createLoanMutation = useMutation({
     mutationFn: async (data: {
-      takenBy: EquipmentLoanTakerType;
+      takenBy: EquipmentLoanTaker;
       expectedReturnDate: string | null;
       itemIds: number[];
       notes: string;
@@ -236,6 +236,7 @@ export default function InventoryPage() {
         inventory: null,
         status: "aktiv",
         taken_by: data.takenBy,
+        notes: data.notes,
       });
       for (const itemId of data.itemIds) {
         await createEquipmentLoanItem({ loan: loan.id, item: itemId });
@@ -338,13 +339,16 @@ export default function InventoryPage() {
         type: staffId === "external" ? "external" : "staff",
         staff: staffId === "external" ? undefined : staffId,
         name: staffId === "external" ? externalName : undefined,
-        program: programId && programId !== "none" ? programId : null,
+        program:
+          programId && programId !== "none"
+            ? (parseInt(programId) ?? undefined)
+            : undefined,
       },
       expectedReturnDate: expectedReturn
         ? new Date(expectedReturn).toISOString()
         : null,
       itemIds: selectedItems,
-      notes: notes || null,
+      notes: notes || "",
     });
   };
 
