@@ -78,6 +78,7 @@ import type {
   CrewPosition,
   EquipmentInventory,
   EquipmentLoan,
+  EquipmentItem,
 } from "@/lib/db/types";
 import Chat from "@/components/chat";
 import {
@@ -165,7 +166,9 @@ export default function ProgramDetailPage({
     enabled: !isNaN(programId),
   });
 
-  const { data: loans = {} } = useQuery({
+  const {
+    data: loans = { foh: null, stage: null, egyeb: null, external: null },
+  } = useQuery({
     queryKey: ["loans", programId],
     queryFn: () => getEquipmentLoansByProgram(programId),
     enabled: !isNaN(programId),
@@ -319,11 +322,11 @@ export default function ProgramDetailPage({
 
   const getItemsOfInventory = (inv: EquipmentInventory) => {
     const loan: EquipmentLoan = loans[inv] as EquipmentLoan;
-    return loan_items.filter((li) => li.loan == loan.id);
+    return loan_items.filter((li) => li.loan == loan?.id);
   };
 
   const getAvailableItems = () => {
-    const loan = new Set(Object.entries(loans).map((l) => l[1].id));
+    const loan = new Set(Object.entries(loans).map((l) => l[1]?.id));
     const loan_item_set = new Set(
       loan_items.filter((li) => loan.has(li.loan)).map((li) => li.item),
     );
@@ -415,9 +418,9 @@ export default function ProgramDetailPage({
       Object.entries(addingItems).map(async (i) => {
         await Promise.all(
           i[1].map(
-            async (item) =>
+            async (item: EquipmentItem) =>
               await createEquipmentLoanItem({
-                loan: loans[i[0]].id,
+                loan: loans[i[0] as EquipmentInventory]!.id,
                 item: item.id,
               }),
           ),
@@ -427,7 +430,7 @@ export default function ProgramDetailPage({
     await Promise.all(
       Object.entries(deletingItems).map(async (i) => {
         await Promise.all(
-          i[1].map(async (item) => await deleteLoanItem(item.id)),
+          i[1].map(async (item) => await deleteLoanItem((item as any).id)),
         );
       }),
     );
@@ -1260,11 +1263,6 @@ export default function ProgramDetailPage({
                             {file.file_name || "Fájl"}
                           </h4>
                           <div className="flex items-center gap-2 mt-0.5">
-                            <p className="text-xs text-slate-500">
-                              {file.file_size
-                                ? `${(file.file_size / 1024 / 1024).toFixed(2)} MB`
-                                : ""}
-                            </p>
                             {file.uploaded_at && (
                               <>
                                 <span className="text-xs text-slate-300">
@@ -1292,23 +1290,6 @@ export default function ProgramDetailPage({
                             }}
                           >
                             <Download className="w-4 h-4" />
-                          </Button>
-                        )}
-                        {can("programs", "delete") && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-red-400 hover:text-red-600"
-                            onClick={() => {
-                              if (confirm("Biztosan törlöd ezt a fájlt?")) {
-                                deleteFileMutation.mutate({
-                                  id: file.id,
-                                  filePath: file.file_path || undefined,
-                                });
-                              }
-                            }}
-                          >
-                            <Trash2 className="w-4 h-4" />
                           </Button>
                         )}
                       </div>
@@ -1661,38 +1642,59 @@ export default function ProgramDetailPage({
                   {inv}
                 </Label>
                 <div className="bg-[#e5e5e54d] rounded-sm">
-                  {getItemsOfInventory(inv).map((item) => (
-                    <div key={item.id} className="flex items-center gap-2 p-2">
-                      <span>
-                        {getTypeName(
-                          items.find((i) => i.id == item.item)?.type ?? 0,
-                        )}
-                      </span>
-                      <span className="text-xs font-mono text-slate-500 whitespace-break-spaces">
-                        SN: {items.find((i) => i.id == item.item)?.serial}
-                      </span>
-                      <CircleMinus
-                        className={`w-4 h-4 text-${deletingItems[inv].includes(item) ? "stone" : "red"}-500 flex-shrink-0`}
-                        onClick={() => {
-                          if (!deletingItems[inv].includes(item)) {
-                            setDeletingItems({
-                              ...deletingItems,
-                              [inv]: [...deletingItems[inv], item],
-                            });
-                          }
-                        }}
-                      />
-                    </div>
-                  ))}
+                  {getItemsOfInventory(inv as EquipmentInventory).map(
+                    (item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center gap-2 p-2"
+                      >
+                        <span>
+                          {getTypeName(
+                            items.find((i) => i.id == item.item)?.type ?? 0,
+                          )}
+                        </span>
+                        <span className="text-xs font-mono text-slate-500 whitespace-break-spaces">
+                          SN: {items.find((i) => i.id == item.item)?.serial}
+                        </span>
+                        <CircleMinus
+                          className={`w-4 h-4 text-${deletingItems[inv as "foh" | "stage" | "egyeb"].includes(item as never) ? "stone" : "red"}-500 flex-shrink-0`}
+                          onClick={() => {
+                            if (
+                              !deletingItems[
+                                inv as "foh" | "stage" | "egyeb"
+                              ].includes(item as never)
+                            ) {
+                              setDeletingItems({
+                                ...deletingItems,
+                                [inv]: [
+                                  ...deletingItems[
+                                    inv as "foh" | "stage" | "egyeb"
+                                  ],
+                                  item,
+                                ],
+                              });
+                            }
+                          }}
+                        />
+                      </div>
+                    ),
+                  )}
                   {getAvailableItems().map((item) => (
                     <div
                       key={item.id}
                       className="flex items-center gap-2 p-2"
                       onClick={() => {
-                        if (!addingItems[inv].includes(item))
+                        if (
+                          !addingItems[
+                            inv as "foh" | "stage" | "egyeb"
+                          ].includes(item as never)
+                        )
                           setAddingItems({
                             ...addingItems,
-                            [inv]: [...addingItems[inv], item],
+                            [inv]: [
+                              ...addingItems[inv as "foh" | "stage" | "egyeb"],
+                              item,
+                            ],
                           });
                       }}
                     >
@@ -1700,7 +1702,9 @@ export default function ProgramDetailPage({
                       <span className="text-xs font-mono text-slate-500">
                         SN: {item.serial}
                       </span>
-                      {addingItems[inv].includes(item) && (
+                      {addingItems[inv as "foh" | "stage" | "egyeb"].includes(
+                        item as never,
+                      ) && (
                         <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
                       )}
                     </div>
