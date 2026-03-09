@@ -3,6 +3,7 @@
 import { google } from "googleapis";
 import { Program, ProgramFile } from "./db/types";
 import { createClient } from "./supabase/server.ts";
+import {Readable} from "node:stream";
 
 async function setupAuth() {
   if (google.auth.apiKey) return;
@@ -76,7 +77,7 @@ export async function upload_program_media(
     fields: "id",
     media: {
       mimeType: file.type,
-      body: file.stream(),
+      body: Readable.from(file.stream()),
     },
   });
 
