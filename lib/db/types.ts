@@ -68,6 +68,7 @@ export interface Program {
   foh_list: string | null;
   stage_list: string | null;
   other_list: string | null;
+  folder?: string | null;
 }
 
 export interface CrewMember {
