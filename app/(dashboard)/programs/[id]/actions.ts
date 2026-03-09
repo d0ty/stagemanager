@@ -28,7 +28,7 @@ export async function uploadFilesAction(
 
   const files = formData.getAll("files") as File[];
   for (const file of files) {
-    await upload_program_media(program, file, user.id);
+    await upload_program_media(program, Buffer.from(await file.arrayBuffer()), file.type, file.name, user.id);
   }
 }
 

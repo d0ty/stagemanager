@@ -4,6 +4,7 @@ import { google } from "googleapis";
 import { Program, ProgramFile } from "./db/types";
 import { createClient } from "./supabase/server.ts";
 import {Readable} from "node:stream";
+import {ReadableStream} from "node:stream/web";
 
 async function setupAuth() {
   if (google.auth.apiKey) return;
@@ -41,8 +42,8 @@ export async function createProgramFolder(program: Program) {
   if (error) throw error;
 }
 
-function getMediaType(file: File) {
-  switch (file.type) {
+function getMediaType(content_type: string) {
+  switch (content_type) {
     case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
     case "application/msword":
     case "application/vnd.oasis.opendocument.text":
@@ -55,29 +56,31 @@ function getMediaType(file: File) {
     case "application/vnd.oasis.opendocument.presentation":
       return "gdrive/slides";
     default:
-      if (file.type.startsWith("image/")) return "gdrive/image";
-      if (file.type.startsWith("video/")) return "gdrive/video";
-      if (file.type.startsWith("audio/")) return "gdrive/audio";
+      if (content_type.startsWith("image/")) return "gdrive/image";
+      if (content_type.startsWith("video/")) return "gdrive/video";
+      if (content_type.startsWith("audio/")) return "gdrive/audio";
       return null;
   }
 }
 
 export async function upload_program_media(
   program: Program,
-  file: File,
+  file: Buffer,
+  content_type: string,
+  filename: string,
   user_id: string,
 ) {
   const drive = await setupAuth()!;
 
   const result_file = await drive!.files.create({
     requestBody: {
-      name: file.name,
+      name: filename,
       parents: [program.folder!],
     },
     fields: "id",
     media: {
-      mimeType: file.type,
-      body: Readable.from(file.stream()),
+      mimeType: content_type,
+      body: Readable.from(file),
     },
   });
 
@@ -90,10 +93,10 @@ export async function upload_program_media(
     fields: "id",
   });
 
-  const mediaType = getMediaType(file);
+  const mediaType = getMediaType(content_type);
   const { error } = await (await createClient()).from("program_file").insert({
     program: program.id,
-    file_name: file.name,
+    file_name: filename,
     mime_type: mediaType,
     uploaded_at: new Date().toISOString(),
     uploaded_by: user_id,
