@@ -335,6 +335,7 @@ export default function ProgramDetailPage({
   };
 
   const getItemsOfInventory = (inv: EquipmentInventory) => {
+    if (inv == "external") return [];
     const loan: EquipmentLoan = loans[inv] as EquipmentLoan;
     return loan_items.filter((li) => li.loan == loan?.id);
   };
@@ -499,7 +500,7 @@ export default function ProgramDetailPage({
           i[1].map(
             async (item: EquipmentItem) =>
               await createEquipmentLoanItem({
-                loan: loans[i[0] as EquipmentInventory]!.id,
+                loan: loans[i[0] as "foh" | "stage" | "egyeb"]!.id,
                 item: item.id,
               }),
           ),

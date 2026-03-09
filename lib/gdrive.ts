@@ -18,13 +18,13 @@ async function setupAuth() {
   });
 
   const client = await auth.getClient();
-  return google.drive({ version: "v3", auth: client })!;
+  return google.drive({ version: "v3", auth }) ?? null;
 }
 
 export async function createProgramFolder(program: Program) {
   const drive = await setupAuth()!;
   const folderName = `${program.date} - ${program.description}`;
-  const folder = await drive.files.create({
+  const folder = await drive!.files.create({
     requestBody: {
       name: folderName,
       mimeType: "application/vnd.google-apps.folder",
@@ -68,19 +68,19 @@ export async function upload_program_media(
 ) {
   const drive = await setupAuth()!;
 
-  const result_file = await drive.files.create({
+  const result_file = await drive!.files.create({
     requestBody: {
       name: file.name,
-      fields: "id",
       parents: [program.folder!],
     },
+    fields: "id",
     media: {
       mimeType: file.type,
       body: file.stream(),
     },
   });
 
-  await drive.permissions.create({
+  await drive!.permissions.create({
     requestBody: {
       type: "anyone",
       role: "writer",
@@ -102,8 +102,8 @@ export async function upload_program_media(
 }
 
 export async function delete_program_media(program_file: ProgramFile) {
-  await setupAuth()!.files.update({
-    fileId: program_file.file_url,
+  await (await setupAuth())!.files.update({
+    fileId: program_file.file_url ?? undefined,
     requestBody: {
       trashed: true,
     },

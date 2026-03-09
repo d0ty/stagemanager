@@ -70,7 +70,7 @@ export async function listEquipmentLoans(
 
 export async function getEquipmentLoansByProgram(
   program: number,
-): Promise<Record<EquipmentInventory, EquipmentLoan>> {
+): Promise<Record<"foh" | "stage" | "egyeb", EquipmentLoan>> {
   const supabase = createClient();
   let query = supabase
     .from("equipment_loan")
@@ -86,7 +86,7 @@ export async function getEquipmentLoansByProgram(
     (["foh", "stage", "egyeb"] as EquipmentInventory[]).map((inv) => {
       return [inv, data.find((l) => l.inventory == inv)];
     }),
-  );
+  ) as Record<"foh" | "stage" | "egyeb", EquipmentLoan>;
 }
 
 export async function listEquipmentLoanItems(): Promise<EquipmentLoanItem[]> {
