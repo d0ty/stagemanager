@@ -28,7 +28,8 @@ async function add_permission(drive: any, fileId: string, type: string = "anyone
     requestBody: {
       type,
       role,
-      emailAddress
+      emailAddress,
+      transferOwnership: role == "owner" ? true : undefined;
     },
     fileId,
     fields: "id",
