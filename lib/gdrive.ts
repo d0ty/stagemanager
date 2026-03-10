@@ -23,6 +23,18 @@ async function setupAuth() {
   return google.drive({ version: "v3", auth }) ?? null;
 }
 
+async function add_permission(drive: any, fileId: string, type: string = "anyone", role: string = "writer", emailAdress: string | undefined) {
+  await drive!.permissions.create({
+    requestBody: {
+      type,
+      role,
+      emailAdress
+    },
+    fileId,
+    fields: "id",
+  });
+}
+
 export async function createProgramFolder(program: Program) {
   const drive = await setupAuth()!;
   const folderName = `${program.date} - ${program.description}`;
@@ -34,6 +46,9 @@ export async function createProgramFolder(program: Program) {
     },
     fields: "id",
   });
+
+  await add_permission(drive, folder.data.id!, "user", "writer", "pokgtech.a@gmail.com");
+  await add_permission(drive, folder.data.id!, "user", "owner", "pokgtech.a@gmail.com");
 
   const { error } = await (await createClient())
     .from("program")
@@ -84,14 +99,6 @@ export async function upload_program_media(
     },
   });
 
-  await drive!.permissions.create({
-    requestBody: {
-      type: "anyone",
-      role: "writer",
-    },
-    fileId: result_file.data.id!,
-    fields: "id",
-  });
 
   const mediaType = getMediaType(content_type);
   const { error } = await (await createClient()).from("program_file").insert({
