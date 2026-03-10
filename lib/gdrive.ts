@@ -8,19 +8,14 @@ import {ReadableStream} from "node:stream/web";
 
 async function setupAuth() {
   if (google.auth.apiKey) return;
-  const auth = new google.auth.GoogleAuth({
-    credentials: JSON.parse(
-      Buffer.from(process.env.DRIVE_CREDENTIALS!, "base64").toString("utf-8"),
-    ),
-    scopes: [
-      "https://www.googleapis.com/auth/drive",
-      "https://www.googleapis.com/auth/drive.file",
-      "https://www.googleapis.com/auth/drive.apps.readonly",
-    ],
-  });
+  const oauth2Client = new google.auth.OAuth2(
+    process.env.DRIVE_CLIENT_ID,
+    process.env.DRIVE_CLIENT_SECRET,
+    "http://localhost:8080"
+  );
+  oauth2Client.setCredentials({refresh_token: process.env.DRIVE_TOKEN});
 
-  const client = await auth.getClient();
-  return google.drive({ version: "v3", auth }) ?? null;
+  return google.drive({ version: "v3", auth: oauth2Client }) ?? null;
 }
 
 async function add_permission(drive: any, fileId: string, type: string = "anyone", role: string = "writer", emailAddress: string | undefined, pendingOwner: true | undefined = undefined) {
