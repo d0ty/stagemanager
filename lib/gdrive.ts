@@ -23,13 +23,14 @@ async function setupAuth() {
   return google.drive({ version: "v3", auth }) ?? null;
 }
 
-async function add_permission(drive: any, fileId: string, type: string = "anyone", role: string = "writer", emailAddress: string | undefined) {
+async function add_permission(drive: any, fileId: string, type: string = "anyone", role: string = "writer", emailAddress: string | undefined, pendingOwner: true | undefined = undefined) {
   await drive!.permissions.create({
     requestBody: {
       type,
       role,
       emailAddress,
-      transferOwnership: (role == "owner") ? true : undefined
+      transferOwnership: (role == "owner") ? true : undefined,
+      pendingOwner,
     },
     fileId,
     fields: "id",
@@ -48,8 +49,7 @@ export async function createProgramFolder(program: Program) {
     fields: "id",
   });
 
-  await add_permission(drive, folder.data.id!, "user", "writer", "pokgtech.a@gmail.com");
-  await add_permission(drive, folder.data.id!, "user", "owner", "pokgtech.a@gmail.com");
+  await add_permission(drive, folder.data.id!, "user", "writer", "pokgtech.a@gmail.com", true);
 
   const { error } = await (await createClient())
     .from("program")
