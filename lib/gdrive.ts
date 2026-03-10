@@ -23,12 +23,12 @@ async function setupAuth() {
   return google.drive({ version: "v3", auth }) ?? null;
 }
 
-async function add_permission(drive: any, fileId: string, type: string = "anyone", role: string = "writer", emailAdress: string | undefined) {
+async function add_permission(drive: any, fileId: string, type: string = "anyone", role: string = "writer", emailAddress: string | undefined) {
   await drive!.permissions.create({
     requestBody: {
       type,
       role,
-      emailAdress
+      emailAddress
     },
     fileId,
     fields: "id",
