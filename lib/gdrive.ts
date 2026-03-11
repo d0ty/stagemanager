@@ -109,12 +109,14 @@ export async function upload_program_media(
 }
 
 export async function delete_program_media(program_file: ProgramFile) {
-  await (await setupAuth())!.files.update({
-    fileId: program_file.file_url ?? undefined,
-    requestBody: {
-      trashed: true,
-    },
-  });
+  if (program_file.mime_type !== "link") {
+    await (await setupAuth())!.files.update({
+      fileId: program_file.file_url ?? undefined,
+      requestBody: {
+        trashed: true,
+      },
+    });
+  }
 
   await (await createClient())
     .from("program_file")
