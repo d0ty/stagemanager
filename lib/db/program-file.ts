@@ -1,7 +1,9 @@
 import { createClient } from "@/lib/supabase/client";
-import type { ProgramFile } from "./types";
+import type { ProgramFile, Staff } from "./types";
 
-export async function getProgramFiles(programId: number): Promise<ProgramFile[]> {
+export async function getProgramFiles(
+  programId: number,
+): Promise<ProgramFile[]> {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("program_file")
@@ -13,7 +15,7 @@ export async function getProgramFiles(programId: number): Promise<ProgramFile[]>
 }
 
 export async function createProgramFile(
-  file: Omit<ProgramFile, "id">
+  file: Omit<ProgramFile, "id">,
 ): Promise<ProgramFile> {
   const supabase = createClient();
   const { data, error } = await supabase
@@ -27,7 +29,7 @@ export async function createProgramFile(
 
 export async function deleteProgramFile(
   id: number,
-  filePath?: string
+  filePath?: string,
 ): Promise<void> {
   const supabase = createClient();
 
@@ -41,3 +43,21 @@ export async function deleteProgramFile(
   if (error) throw error;
 }
 
+export async function link_program_media(
+  program: number,
+  link: string,
+  user: Staff,
+) {
+  const supabase = createClient();
+
+  const { error } = await supabase.from("program_file").insert({
+    program,
+    file_name: link,
+    file_url: link,
+    mime_type: "link",
+    uploaded_at: new Date().toISOString(),
+    uploaded_by: user.id,
+  });
+
+  if (error) throw error;
+}
