@@ -3,28 +3,39 @@
 import { google } from "googleapis";
 import { Program, ProgramFile } from "./db/types";
 import { createClient } from "./supabase/server.ts";
+import {Readable} from "node:stream";
+import {ReadableStream} from "node:stream/web";
 
 async function setupAuth() {
   if (google.auth.apiKey) return;
-  const auth = new google.auth.GoogleAuth({
-    credentials: JSON.parse(
-      Buffer.from(process.env.DRIVE_CREDENTIALS!, "base64").toString("utf-8"),
-    ),
-    scopes: [
-      "https://www.googleapis.com/auth/drive",
-      "https://www.googleapis.com/auth/drive.file",
-      "https://www.googleapis.com/auth/drive.apps.readonly",
-    ],
-  });
+  const oauth2Client = new google.auth.OAuth2(
+    process.env.DRIVE_CLIENT_ID,
+    process.env.DRIVE_CLIENT_SECRET,
+    "http://localhost:8080"
+  );
+  oauth2Client.setCredentials({refresh_token: process.env.DRIVE_TOKEN});
 
-  const client = await auth.getClient();
-  return google.drive({ version: "v3", auth: client })!;
+  return google.drive({ version: "v3", auth: oauth2Client }) ?? null;
+}
+
+async function add_permission(drive: any, fileId: string, type: string = "anyone", role: string = "writer", emailAddress: string | undefined, pendingOwner: true | undefined = undefined) {
+  await drive!.permissions.create({
+    requestBody: {
+      type,
+      role,
+      emailAddress,
+      transferOwnership: (role == "owner") ? true : undefined,
+      pendingOwner,
+    },
+    fileId,
+    fields: "id",
+  });
 }
 
 export async function createProgramFolder(program: Program) {
   const drive = await setupAuth()!;
   const folderName = `${program.date} - ${program.description}`;
-  const folder = await drive.files.create({
+  const folder = await drive!.files.create({
     requestBody: {
       name: folderName,
       mimeType: "application/vnd.google-apps.folder",
@@ -33,6 +44,8 @@ export async function createProgramFolder(program: Program) {
     fields: "id",
   });
 
+  await add_permission(drive, folder.data.id!, "user", "writer", "pokgtech.a@gmail.com", true);
+
   const { error } = await (await createClient())
     .from("program")
     .update({ folder: folder.data.id })
@@ -40,8 +53,8 @@ export async function createProgramFolder(program: Program) {
   if (error) throw error;
 }
 
-function getMediaType(file: File) {
-  switch (file.type) {
+function getMediaType(content_type: string) {
+  switch (content_type) {
     case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
     case "application/msword":
     case "application/vnd.oasis.opendocument.text":
@@ -54,45 +67,39 @@ function getMediaType(file: File) {
     case "application/vnd.oasis.opendocument.presentation":
       return "gdrive/slides";
     default:
-      if (file.type.startsWith("image/")) return "gdrive/image";
-      if (file.type.startsWith("video/")) return "gdrive/video";
-      if (file.type.startsWith("audio/")) return "gdrive/audio";
+      if (content_type.startsWith("image/")) return "gdrive/image";
+      if (content_type.startsWith("video/")) return "gdrive/video";
+      if (content_type.startsWith("audio/")) return "gdrive/audio";
       return null;
   }
 }
 
 export async function upload_program_media(
   program: Program,
-  file: File,
+  file: Buffer,
+  content_type: string,
+  filename: string,
   user_id: string,
 ) {
   const drive = await setupAuth()!;
 
-  const result_file = await drive.files.create({
+  const result_file = await drive!.files.create({
     requestBody: {
-      name: file.name,
-      fields: "id",
+      name: filename,
       parents: [program.folder!],
     },
-    media: {
-      mimeType: file.type,
-      body: file.stream(),
-    },
-  });
-
-  await drive.permissions.create({
-    requestBody: {
-      type: "anyone",
-      role: "writer",
-    },
-    fileId: result_file.data.id!,
     fields: "id",
+    media: {
+      mimeType: content_type,
+      body: Readable.from(file),
+    },
   });
 
-  const mediaType = getMediaType(file);
+
+  const mediaType = getMediaType(content_type);
   const { error } = await (await createClient()).from("program_file").insert({
     program: program.id,
-    file_name: file.name,
+    file_name: filename,
     mime_type: mediaType,
     uploaded_at: new Date().toISOString(),
     uploaded_by: user_id,
@@ -102,8 +109,8 @@ export async function upload_program_media(
 }
 
 export async function delete_program_media(program_file: ProgramFile) {
-  await setupAuth()!.files.update({
-    fileId: program_file.file_url,
+  await (await setupAuth())!.files.update({
+    fileId: program_file.file_url ?? undefined,
     requestBody: {
       trashed: true,
     },

@@ -16,6 +16,11 @@ import {
   ClipboardList,
   Package,
   FileText,
+  FileSpreadsheet,
+  FileChartPie,
+  FileImage,
+  FileVideo,
+  FileMusic,
   MessageCircle,
   Clock,
   Plus,
@@ -25,9 +30,9 @@ import {
   CheckCircle2,
   Circle,
   LayoutDashboard,
-  Download,
   Upload,
   CircleMinus,
+  Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -69,9 +74,12 @@ import {
 } from "@/lib/db/rehearsal";
 import {
   getProgramFiles,
-  uploadProgramFile,
-  deleteProgramFile,
 } from "@/lib/db/program-file";
+import {
+  uploadFilesAction,
+  deleteFileAction,
+  getFileLinkAction,
+} from "./actions";
 import { listStaff } from "@/lib/db/staff";
 import { usePermissions } from "@/hooks/use-permissions";
 import type {
@@ -110,6 +118,8 @@ export default function ProgramDetailPage({
   const [fohList, setFohList] = useState("");
   const [stageList, setStageList] = useState("");
   const [otherList, setOtherList] = useState("");
+  const [fileSearch, setFileSearch] = useState("");
+  const [isDragging, setIsDragging] = useState(false);
 
   const [addingItems, setAddingItems] = useState({
     foh: [],
@@ -291,15 +301,19 @@ export default function ProgramDetailPage({
   });
 
   const uploadFileMutation = useMutation({
-    mutationFn: (file: File) => uploadProgramFile(programId, file),
+    mutationFn: (files: File[]) => {
+      const formData = new FormData();
+      files.forEach((f) => formData.append("files", f));
+      return uploadFilesAction(programId, formData);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["program-files", programId] });
     },
   });
 
   const deleteFileMutation = useMutation({
-    mutationFn: ({ id, filePath }: { id: number; filePath?: string }) =>
-      deleteProgramFile(id, filePath),
+    mutationFn: (programFile: import("@/lib/db/types").ProgramFile) =>
+      deleteFileAction(programFile),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["program-files", programId] });
     },
@@ -321,6 +335,7 @@ export default function ProgramDetailPage({
   };
 
   const getItemsOfInventory = (inv: EquipmentInventory) => {
+    if (inv == "external") return [];
     const loan: EquipmentLoan = loans[inv] as EquipmentLoan;
     return loan_items.filter((li) => li.loan == loan?.id);
   };
@@ -399,19 +414,84 @@ export default function ProgramDetailPage({
     });
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      try {
-        await uploadFileMutation.mutateAsync(file);
-        // Reset input
-        e.target.value = "";
-      } catch (error) {
-        console.error("File upload error:", error);
-        alert("Hiba történt a fájl feltöltése során.");
-      }
+  const ACCEPTED_MIME_TYPES = [
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.oasis.opendocument.text",
+    "text/plain",
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.oasis.opendocument.spreadsheet",
+    "application/vnd.ms-powerpoint",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "application/vnd.oasis.opendocument.presentation",
+  ];
+
+  const isAccepted = (file: File) =>
+    ACCEPTED_MIME_TYPES.includes(file.type) ||
+    file.type.startsWith("image/") ||
+    file.type.startsWith("video/") ||
+    file.type.startsWith("audio/");
+
+  const handleFilesUpload = async (selectedFiles: FileList | File[]) => {
+    const valid = Array.from(selectedFiles).filter(isAccepted);
+    if (valid.length === 0) return;
+    try {
+      await uploadFileMutation.mutateAsync(valid);
+    } catch (error) {
+      console.error("File upload error:", error);
+      alert("Hiba történt a fájl feltöltése során.");
     }
   };
+
+  const handleFileInputChange = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    if (e.target.files && e.target.files.length > 0) {
+      await handleFilesUpload(e.target.files);
+      e.target.value = "";
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files.length > 0) {
+      await handleFilesUpload(e.dataTransfer.files);
+    }
+  };
+
+  const getFileIcon = (mimeType: string | null) => {
+    switch (mimeType) {
+      case "gdrive/docs":
+        return <FileText className="w-5 h-5 text-indigo-600" />;
+      case "gdrive/sheets":
+        return <FileSpreadsheet className="w-5 h-5 text-indigo-600" />;
+      case "gdrive/slides":
+        return <FileChartPie className="w-5 h-5 text-indigo-600" />;
+      case "gdrive/image":
+        return <FileImage className="w-5 h-5 text-indigo-600" />;
+      case "gdrive/video":
+        return <FileVideo className="w-5 h-5 text-indigo-600" />;
+      case "gdrive/audio":
+        return <FileMusic className="w-5 h-5 text-indigo-600" />;
+      default:
+        return <FileText className="w-5 h-5 text-indigo-600" />;
+    }
+  };
+
 
   const handleLoanChanges = async () => {
     await Promise.all(
@@ -420,7 +500,7 @@ export default function ProgramDetailPage({
           i[1].map(
             async (item: EquipmentItem) =>
               await createEquipmentLoanItem({
-                loan: loans[i[0] as EquipmentInventory]!.id,
+                loan: loans[i[0] as "foh" | "stage" | "egyeb"]!.id,
                 item: item.id,
               }),
           ),
@@ -456,6 +536,10 @@ export default function ProgramDetailPage({
 
   const soundTasks = tasks.filter((t) => t.type === "sound");
   const lightTasks = tasks.filter((t) => t.type === "light");
+
+  const filteredFiles = files.filter((f) =>
+    (f.file_name ?? "").toLowerCase().includes(fileSearch.toLowerCase()),
+  );
 
   const uniqueStaffCount = new Set(
     [...crew.map((c) => c.staff), program.leader].filter(Boolean),
@@ -1203,100 +1287,209 @@ export default function ProgramDetailPage({
                 Fájlok
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-4">
+              {/* Search bar */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Fájl keresése..."
+                  value={fileSearch}
+                  onChange={(e) => setFileSearch(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                />
+              </div>
+
+              {/* Drag & Drop upload area */}
               {can("programs", "create") && (
-                <div className="border-2 border-dashed border-slate-200 rounded-lg p-6 bg-slate-50 hover:border-indigo-300 transition">
-                  <div className="flex flex-col items-center gap-4">
-                    <Upload className="w-12 h-12 text-slate-400" />
+                <div
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  className={`border-2 border-dashed rounded-lg p-6 transition-colors ${
+                    isDragging
+                      ? "border-indigo-400 bg-indigo-50"
+                      : "border-slate-200 bg-slate-50 hover:border-indigo-300"
+                  }`}
+                >
+                  <div className="flex flex-col items-center gap-3">
+                    <Upload
+                      className={`w-10 h-10 ${isDragging ? "text-indigo-500" : "text-slate-400"}`}
+                    />
                     <div className="text-center">
-                      <h3 className="font-medium text-slate-900 mb-1">
-                        Fájl feltöltése
-                      </h3>
-                      <p className="text-sm text-slate-500 mb-4">
-                        PDF, Word (.docx) vagy Excel (.xlsx) fájl
+                      <p className="text-sm font-medium text-slate-700">
+                        {isDragging
+                          ? "Engedd el a fájlokat a feltöltéshez"
+                          : "Húzd ide a fájlokat, vagy"}
                       </p>
+                      {!isDragging && (
+                        <p className="text-xs text-slate-500 mt-1">
+                          Dokumentumok, táblázatok, bemutatók, képek, videók,
+                          hangfájlok
+                        </p>
+                      )}
                     </div>
-                    <label className="cursor-pointer">
-                      <input
-                        type="file"
-                        className="hidden"
-                        accept=".pdf,.doc,.docx,.xls,.xlsx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                        onChange={handleFileUpload}
-                        disabled={uploadFileMutation.isPending}
-                      />
-                      <Button
-                        type="button"
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white"
-                        disabled={uploadFileMutation.isPending}
-                        onClick={(e) => {
-                          e.currentTarget.previousElementSibling?.dispatchEvent(
-                            new MouseEvent("click"),
-                          );
-                        }}
-                      >
-                        {uploadFileMutation.isPending
-                          ? "Feltöltés..."
-                          : "Fájl kiválasztása"}
-                      </Button>
-                    </label>
+                    {!isDragging && (
+                      <label className="cursor-pointer">
+                        <input
+                          type="file"
+                          multiple
+                          className="hidden"
+                          accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.oasis.opendocument.text,text/plain,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.oasis.opendocument.spreadsheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.oasis.opendocument.presentation,image/*,video/*,audio/*"
+                          onChange={handleFileInputChange}
+                          disabled={uploadFileMutation.isPending}
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                          disabled={uploadFileMutation.isPending}
+                          onClick={(e) => {
+                            (
+                              e.currentTarget
+                                .previousElementSibling as HTMLInputElement
+                            )?.click();
+                          }}
+                        >
+                          {uploadFileMutation.isPending
+                            ? "Feltöltés..."
+                            : "Fájl kiválasztása"}
+                        </Button>
+                      </label>
+                    )}
+
+                    {/* File list inside drag & drop area */}
+                    {files.length > 0 && (
+                      <div className="w-full mt-2 space-y-2">
+                        {filteredFiles.map((file) => (
+                            <div
+                              key={file.id}
+                              className="flex items-center justify-between p-3 bg-white rounded-lg border border-slate-200 hover:shadow-sm transition group"
+                            >
+                              <div className="flex items-center gap-3 flex-1 min-w-0">
+                                <div className="w-9 h-9 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
+                                  {getFileIcon(file.mime_type)}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <button
+                                    className="font-medium text-sm text-slate-900 truncate hover:text-indigo-600 transition-colors text-left w-full"
+                                    onClick={async () => {
+                                      const link =
+                                        await getFileLinkAction(file);
+                                      window.open(link, "_blank");
+                                    }}
+                                  >
+                                    {file.file_name || "Fájl"}
+                                  </button>
+                                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                    {file.uploaded_at && (
+                                      <p className="text-xs text-slate-500">
+                                        {format(
+                                          new Date(file.uploaded_at),
+                                          "dd/MM/yyyy HH:mm",
+                                        )}
+                                      </p>
+                                    )}
+                                    {file.uploaded_by && (
+                                      <>
+                                        <span className="text-xs text-slate-300">
+                                          •
+                                        </span>
+                                        <p className="text-xs text-slate-500">
+                                          {getStaffName(file.uploaded_by)}
+                                        </p>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                              {can("programs", "delete") && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition flex-shrink-0"
+                                  disabled={deleteFileMutation.isPending}
+                                  onClick={() =>
+                                    deleteFileMutation.mutate(file)
+                                  }
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              )}
+                            </div>
+                          ))}
+                        {filteredFiles.length === 0 && (
+                          <div className="text-center py-4 text-sm text-slate-400">
+                            Nincs a keresésnek megfelelő fájl.
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {files.length === 0 && (
+                      <p className="text-sm text-slate-400">
+                        Még nincs feltöltött fájl ehhez a programhoz.
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
 
-              <div className="space-y-3">
-                {files.length === 0 ? (
-                  <div className="text-center py-8 text-slate-400">
-                    Még nincs feltöltött fájl ehhez a programhoz.
-                  </div>
-                ) : (
-                  files.map((file) => (
-                    <div
-                      key={file.id}
-                      className="flex items-center justify-between p-4 bg-white rounded-lg border border-slate-200 hover:shadow-sm transition group"
-                    >
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
-                          <FileText className="w-5 h-5 text-indigo-600" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-slate-900 truncate">
-                            {file.file_name || "Fájl"}
-                          </h4>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            {file.uploaded_at && (
-                              <>
-                                <span className="text-xs text-slate-300">
-                                  •
-                                </span>
-                                <p className="text-xs text-slate-500">
-                                  {format(
-                                    new Date(file.uploaded_at),
-                                    "dd/MM/yyyy HH:mm",
-                                  )}
-                                </p>
-                              </>
-                            )}
+              {/* Read-only file list for users without upload permission */}
+              {!can("programs", "create") && (
+                <div className="space-y-2">
+                  {files.length === 0 ? (
+                    <div className="text-center py-8 text-slate-400">
+                      Még nincs feltöltött fájl ehhez a programhoz.
+                    </div>
+                  ) : (
+                    filteredFiles
+                      .map((file) => (
+                        <div
+                          key={file.id}
+                          className="flex items-center justify-between p-3 bg-white rounded-lg border border-slate-200 hover:shadow-sm transition group"
+                        >
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <div className="w-9 h-9 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
+                              {getFileIcon(file.mime_type)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <button
+                                className="font-medium text-sm text-slate-900 truncate hover:text-indigo-600 transition-colors text-left w-full"
+                                onClick={async () => {
+                                  const link = await getFileLinkAction(file);
+                                  window.open(link, "_blank");
+                                }}
+                              >
+                                {file.file_name || "Fájl"}
+                              </button>
+                              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                {file.uploaded_at && (
+                                  <p className="text-xs text-slate-500">
+                                    {format(
+                                      new Date(file.uploaded_at),
+                                      "dd/MM/yyyy HH:mm",
+                                    )}
+                                  </p>
+                                )}
+                                {file.uploaded_by && (
+                                  <>
+                                    <span className="text-xs text-slate-300">
+                                      •
+                                    </span>
+                                    <p className="text-xs text-slate-500">
+                                      {getStaffName(file.uploaded_by)}
+                                    </p>
+                                  </>
+                                )}
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition">
-                        {file.file_url && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-slate-400 hover:text-indigo-600"
-                            onClick={() => {
-                              window.open(file.file_url!, "_blank");
-                            }}
-                          >
-                            <Download className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
+                      ))
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
