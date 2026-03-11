@@ -21,9 +21,11 @@ import {
   FileImage,
   FileVideo,
   FileMusic,
+  FileSymlink,
   MessageCircle,
   Clock,
   Plus,
+  SquarePlus,
   Trash2,
   Mic2,
   Lightbulb,
@@ -74,6 +76,7 @@ import {
 } from "@/lib/db/rehearsal";
 import {
   getProgramFiles,
+  link_program_media,
 } from "@/lib/db/program-file";
 import {
   uploadFilesAction,
@@ -105,7 +108,7 @@ export default function ProgramDetailPage({
 }) {
   const { id } = use(params);
   const programId = parseInt(id, 10);
-  const { can } = usePermissions();
+  const { can, staff } = usePermissions();
   const queryClient = useQueryClient();
 
   const [isCrewDialogOpen, setIsCrewDialogOpen] = useState(false);
@@ -120,6 +123,7 @@ export default function ProgramDetailPage({
   const [otherList, setOtherList] = useState("");
   const [fileSearch, setFileSearch] = useState("");
   const [isDragging, setIsDragging] = useState(false);
+  const [linkInput, setLinkInput] = useState("");
 
   const [addingItems, setAddingItems] = useState({
     foh: [],
@@ -319,6 +323,17 @@ export default function ProgramDetailPage({
     },
   });
 
+  const linkFileMutation = useMutation({
+    mutationFn: (link: string) => {
+      if (!staff) throw new Error("Nem vagy bejelentkezve.");
+      return link_program_media(programId, link, staff);
+    },
+    onSuccess: () => {
+      setLinkInput("");
+      queryClient.invalidateQueries({ queryKey: ["program-files", programId] });
+    },
+  });
+
   // Initialize equipment lists from program data
   useEffect(() => {
     if (program) {
@@ -475,6 +490,8 @@ export default function ProgramDetailPage({
 
   const getFileIcon = (mimeType: string | null) => {
     switch (mimeType) {
+      case "link":
+        return <FileSymlink className="w-5 h-5 text-indigo-600" />;
       case "gdrive/docs":
         return <FileText className="w-5 h-5 text-indigo-600" />;
       case "gdrive/sheets":
@@ -1374,9 +1391,13 @@ export default function ProgramDetailPage({
                                   <button
                                     className="font-medium text-sm text-slate-900 truncate hover:text-indigo-600 transition-colors text-left w-full"
                                     onClick={async () => {
-                                      const link =
-                                        await getFileLinkAction(file);
-                                      window.open(link, "_blank");
+                                      if (file.mime_type === "link") {
+                                        if (file.file_url) window.open(file.file_url, "_blank");
+                                      } else {
+                                        const link =
+                                          await getFileLinkAction(file);
+                                        window.open(link, "_blank");
+                                      }
                                     }}
                                   >
                                     {file.file_name || "Fájl"}
@@ -1431,6 +1452,37 @@ export default function ProgramDetailPage({
                         Még nincs feltöltött fájl ehhez a programhoz.
                       </p>
                     )}
+
+                    {/* Link input */}
+                    <div className="flex items-center gap-2 w-full mt-2">
+                      <input
+                        type="text"
+                        placeholder="Link hozzáadása..."
+                        value={linkInput}
+                        onChange={(e) => setLinkInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && linkInput.trim()) {
+                            linkFileMutation.mutate(linkInput.trim());
+                          }
+                        }}
+                        className="flex-1 px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        disabled={linkFileMutation.isPending}
+                      />
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        className="text-indigo-600 hover:text-indigo-700"
+                        disabled={linkFileMutation.isPending || !linkInput.trim()}
+                        onClick={() => {
+                          if (linkInput.trim()) {
+                            linkFileMutation.mutate(linkInput.trim());
+                          }
+                        }}
+                      >
+                        <SquarePlus className="w-5 h-5" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -1457,8 +1509,12 @@ export default function ProgramDetailPage({
                               <button
                                 className="font-medium text-sm text-slate-900 truncate hover:text-indigo-600 transition-colors text-left w-full"
                                 onClick={async () => {
-                                  const link = await getFileLinkAction(file);
-                                  window.open(link, "_blank");
+                                  if (file.mime_type === "link") {
+                                    if (file.file_url) window.open(file.file_url, "_blank");
+                                  } else {
+                                    const link = await getFileLinkAction(file);
+                                    window.open(link, "_blank");
+                                  }
                                 }}
                               >
                                 {file.file_name || "Fájl"}
