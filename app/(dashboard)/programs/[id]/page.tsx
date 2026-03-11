@@ -76,12 +76,12 @@ import {
 } from "@/lib/db/rehearsal";
 import {
   getProgramFiles,
-  link_program_media,
 } from "@/lib/db/program-file";
 import {
   uploadFilesAction,
   deleteFileAction,
   getFileLinkAction,
+  linkFileAction,
 } from "./actions";
 import { listStaff } from "@/lib/db/staff";
 import { usePermissions } from "@/hooks/use-permissions";
@@ -108,7 +108,7 @@ export default function ProgramDetailPage({
 }) {
   const { id } = use(params);
   const programId = parseInt(id, 10);
-  const { can, staff } = usePermissions();
+  const { can } = usePermissions();
   const queryClient = useQueryClient();
 
   const [isCrewDialogOpen, setIsCrewDialogOpen] = useState(false);
@@ -324,10 +324,7 @@ export default function ProgramDetailPage({
   });
 
   const linkFileMutation = useMutation({
-    mutationFn: (link: string) => {
-      if (!staff) throw new Error("Nem vagy bejelentkezve.");
-      return link_program_media(programId, link, staff);
-    },
+    mutationFn: (link: string) => linkFileAction(programId, link),
     onSuccess: () => {
       setLinkInput("");
       queryClient.invalidateQueries({ queryKey: ["program-files", programId] });
