@@ -7,20 +7,25 @@ import { Readable } from "node:stream";
 import { get } from "@vercel/edge-config";
 
 export async function getGoogleAuthClient() {
-  const { client_id, client_secret } = JSON.parse(
-    Buffer.from(process.env.DRIVE_CREDS!, "base64").toString(),
-  );
+  const {
+    web: { client_id, client_secret },
+  } = JSON.parse(Buffer.from(process.env.DRIVE_CREDS!, "base64").toString());
 
   const oauth2Client = new google.auth.OAuth2(
     client_id,
     client_secret,
-    "http://localhost:8080",
+    "http://localhost:3000/auth/google/callback",
   );
 
   oauth2Client.setCredentials({
     refresh_token: await get("refresh_token"),
-    access_token: await get("access_token"),
   });
+
+  console.log("token refresh");
+  // console.log(await oauth2Client.refreshAccessToken());
+  console.log(oauth2Client.credentials);
+  console.log(client_id, client_secret);
+  console.log(await oauth2Client.getAccessToken());
 
   return oauth2Client;
 }
