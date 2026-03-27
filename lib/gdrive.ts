@@ -3,28 +3,47 @@
 import { google } from "googleapis";
 import { Program, ProgramFile } from "./db/types";
 import { createClient } from "./supabase/server.ts";
-import {Readable} from "node:stream";
-import {ReadableStream} from "node:stream/web";
+import { Readable } from "node:stream";
+import { get } from "@vercel/edge-config";
+
+export async function getGoogleAuthClient() {
+  const { client_id, client_secret } = JSON.parse(
+    Buffer.from(process.env.DRIVE_CREDS!, "base64").toString(),
+  );
+
+  const oauth2Client = new google.auth.OAuth2(
+    client_id,
+    client_secret,
+    "http://localhost:8080",
+  );
+
+  oauth2Client.setCredentials({
+    refresh_token: await get("refresh_token"),
+    access_token: await get("access_token"),
+  });
+
+  return oauth2Client;
+}
 
 async function setupAuth() {
-  if (google.auth.apiKey) return;
-  const oauth2Client = new google.auth.OAuth2(
-    process.env.DRIVE_CLIENT_ID,
-    process.env.DRIVE_CLIENT_SECRET,
-    "http://localhost:8080"
-  );
-  oauth2Client.setCredentials({refresh_token: process.env.DRIVE_TOKEN});
-
+  const oauth2Client = await getGoogleAuthClient();
   return google.drive({ version: "v3", auth: oauth2Client }) ?? null;
 }
 
-async function add_permission(drive: any, fileId: string, type: string = "anyone", role: string = "writer", emailAddress: string | undefined, pendingOwner: true | undefined = undefined) {
+async function add_permission(
+  drive: any,
+  fileId: string,
+  type: string = "anyone",
+  role: string = "writer",
+  emailAddress: string | undefined,
+  pendingOwner: true | undefined = undefined,
+) {
   await drive!.permissions.create({
     requestBody: {
       type,
       role,
       emailAddress,
-      transferOwnership: (role == "owner") ? true : undefined,
+      transferOwnership: role == "owner" ? true : undefined,
       pendingOwner,
     },
     fileId,
@@ -44,7 +63,14 @@ export async function createProgramFolder(program: Program) {
     fields: "id",
   });
 
-  await add_permission(drive, folder.data.id!, "user", "writer", "pokgtech.a@gmail.com", true);
+  await add_permission(
+    drive,
+    folder.data.id!,
+    "user",
+    "writer",
+    "pokgtech.a@gmail.com",
+    true,
+  );
 
   const { error } = await (await createClient())
     .from("program")
@@ -94,7 +120,6 @@ export async function upload_program_media(
       body: Readable.from(file),
     },
   });
-
 
   const mediaType = getMediaType(content_type);
   const { error } = await (await createClient()).from("program_file").insert({
