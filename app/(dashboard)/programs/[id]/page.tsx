@@ -74,9 +74,7 @@ import {
   updateRehearsal,
   deleteRehearsal,
 } from "@/lib/db/rehearsal";
-import {
-  getProgramFiles,
-} from "@/lib/db/program-file";
+import { getProgramFiles } from "@/lib/db/program-file";
 import {
   uploadFilesAction,
   deleteFileAction,
@@ -505,7 +503,6 @@ export default function ProgramDetailPage({
         return <FileText className="w-5 h-5 text-indigo-600" />;
     }
   };
-
 
   const handleLoanChanges = async () => {
     await Promise.all(
@@ -1376,66 +1373,65 @@ export default function ProgramDetailPage({
                     {files.length > 0 && (
                       <div className="w-full mt-2 space-y-2">
                         {filteredFiles.map((file) => (
-                            <div
-                              key={file.id}
-                              className="flex items-center justify-between p-3 bg-white rounded-lg border border-slate-200 hover:shadow-sm transition group"
-                            >
-                              <div className="flex items-center gap-3 flex-1 min-w-0">
-                                <div className="w-9 h-9 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
-                                  {getFileIcon(file.mime_type)}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <button
-                                    className="font-medium text-sm text-slate-900 truncate hover:text-indigo-600 transition-colors text-left w-full"
-                                    onClick={async () => {
-                                      if (file.mime_type === "link") {
-                                        if (file.file_url) window.open(file.file_url, "_blank");
-                                      } else {
-                                        const link =
-                                          await getFileLinkAction(file);
-                                        window.open(link, "_blank");
-                                      }
-                                    }}
-                                  >
-                                    {file.file_name || "Fájl"}
-                                  </button>
-                                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                                    {file.uploaded_at && (
+                          <div
+                            key={file.id}
+                            className="flex items-center justify-between p-3 bg-white rounded-lg border border-slate-200 hover:shadow-sm transition group"
+                          >
+                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                              <div className="w-9 h-9 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
+                                {getFileIcon(file.mime_type)}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <button
+                                  className="font-medium text-sm text-slate-900 truncate hover:text-indigo-600 transition-colors text-left w-full"
+                                  onClick={async () => {
+                                    if (file.mime_type === "link") {
+                                      if (file.file_url)
+                                        window.open(file.file_url, "_blank");
+                                    } else {
+                                      const link =
+                                        await getFileLinkAction(file);
+                                      window.open(link, "_blank");
+                                    }
+                                  }}
+                                >
+                                  {file.file_name || "Fájl"}
+                                </button>
+                                <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                  {file.uploaded_at && (
+                                    <p className="text-xs text-slate-500">
+                                      {format(
+                                        new Date(file.uploaded_at),
+                                        "dd/MM/yyyy HH:mm",
+                                      )}
+                                    </p>
+                                  )}
+                                  {file.uploaded_by && (
+                                    <>
+                                      <span className="text-xs text-slate-300">
+                                        •
+                                      </span>
                                       <p className="text-xs text-slate-500">
-                                        {format(
-                                          new Date(file.uploaded_at),
-                                          "dd/MM/yyyy HH:mm",
-                                        )}
+                                        {getStaffName(file.uploaded_by)}
                                       </p>
-                                    )}
-                                    {file.uploaded_by && (
-                                      <>
-                                        <span className="text-xs text-slate-300">
-                                          •
-                                        </span>
-                                        <p className="text-xs text-slate-500">
-                                          {getStaffName(file.uploaded_by)}
-                                        </p>
-                                      </>
-                                    )}
-                                  </div>
+                                    </>
+                                  )}
                                 </div>
                               </div>
-                              {can("programs", "delete") && (
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition flex-shrink-0"
-                                  disabled={deleteFileMutation.isPending}
-                                  onClick={() =>
-                                    deleteFileMutation.mutate(file)
-                                  }
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              )}
                             </div>
-                          ))}
+                            {can("programs", "delete") && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition flex-shrink-0"
+                                disabled={deleteFileMutation.isPending}
+                                onClick={() => deleteFileMutation.mutate(file)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </div>
+                        ))}
                         {filteredFiles.length === 0 && (
                           <div className="text-center py-4 text-sm text-slate-400">
                             Nincs a keresésnek megfelelő fájl.
@@ -1470,7 +1466,9 @@ export default function ProgramDetailPage({
                         size="icon"
                         variant="ghost"
                         className="text-indigo-600 hover:text-indigo-700"
-                        disabled={linkFileMutation.isPending || !linkInput.trim()}
+                        disabled={
+                          linkFileMutation.isPending || !linkInput.trim()
+                        }
                         onClick={() => {
                           if (linkInput.trim()) {
                             linkFileMutation.mutate(linkInput.trim());
@@ -1492,54 +1490,54 @@ export default function ProgramDetailPage({
                       Még nincs feltöltött fájl ehhez a programhoz.
                     </div>
                   ) : (
-                    filteredFiles
-                      .map((file) => (
-                        <div
-                          key={file.id}
-                          className="flex items-center justify-between p-3 bg-white rounded-lg border border-slate-200 hover:shadow-sm transition group"
-                        >
-                          <div className="flex items-center gap-3 flex-1 min-w-0">
-                            <div className="w-9 h-9 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
-                              {getFileIcon(file.mime_type)}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <button
-                                className="font-medium text-sm text-slate-900 truncate hover:text-indigo-600 transition-colors text-left w-full"
-                                onClick={async () => {
-                                  if (file.mime_type === "link") {
-                                    if (file.file_url) window.open(file.file_url, "_blank");
-                                  } else {
-                                    const link = await getFileLinkAction(file);
-                                    window.open(link, "_blank");
-                                  }
-                                }}
-                              >
-                                {file.file_name || "Fájl"}
-                              </button>
-                              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                                {file.uploaded_at && (
+                    filteredFiles.map((file) => (
+                      <div
+                        key={file.id}
+                        className="flex items-center justify-between p-3 bg-white rounded-lg border border-slate-200 hover:shadow-sm transition group"
+                      >
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <div className="w-9 h-9 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
+                            {getFileIcon(file.mime_type)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <button
+                              className="font-medium text-sm text-slate-900 truncate hover:text-indigo-600 transition-colors text-left w-full"
+                              onClick={async () => {
+                                if (file.mime_type === "link") {
+                                  if (file.file_url)
+                                    window.open(file.file_url, "_blank");
+                                } else {
+                                  const link = await getFileLinkAction(file);
+                                  window.open(link, "_blank");
+                                }
+                              }}
+                            >
+                              {file.file_name || "Fájl"}
+                            </button>
+                            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                              {file.uploaded_at && (
+                                <p className="text-xs text-slate-500">
+                                  {format(
+                                    new Date(file.uploaded_at),
+                                    "dd/MM/yyyy HH:mm",
+                                  )}
+                                </p>
+                              )}
+                              {file.uploaded_by && (
+                                <>
+                                  <span className="text-xs text-slate-300">
+                                    •
+                                  </span>
                                   <p className="text-xs text-slate-500">
-                                    {format(
-                                      new Date(file.uploaded_at),
-                                      "dd/MM/yyyy HH:mm",
-                                    )}
+                                    {getStaffName(file.uploaded_by)}
                                   </p>
-                                )}
-                                {file.uploaded_by && (
-                                  <>
-                                    <span className="text-xs text-slate-300">
-                                      •
-                                    </span>
-                                    <p className="text-xs text-slate-500">
-                                      {getStaffName(file.uploaded_by)}
-                                    </p>
-                                  </>
-                                )}
-                              </div>
+                                </>
+                              )}
                             </div>
                           </div>
                         </div>
-                      ))
+                      </div>
+                    ))
                   )}
                 </div>
               )}
@@ -1874,11 +1872,11 @@ export default function ProgramDetailPage({
 
       {/* Loan editor */}
       <Dialog open={isLoanDialogOpen} onOpenChange={setIsLoanDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[80%] !max-w-fit">
           <DialogHeader>
             <DialogTitle>Eszközök kezelése</DialogTitle>
           </DialogHeader>
-          <div className="flex jutify-between gap-5">
+          <div className="flex jutify-between gap-5 h-full w-full">
             {["foh", "stage", "egyeb"].map((inv) => (
               <div key={inv} className="space-y-2 block">
                 <Label
@@ -1887,7 +1885,7 @@ export default function ProgramDetailPage({
                 >
                   {inv}
                 </Label>
-                <div className="bg-[#e5e5e54d] rounded-sm">
+                <div className="bg-[#e5e5e54d] rounded-sm h-[500px] overflow-scroll w-full">
                   {getItemsOfInventory(inv as EquipmentInventory).map(
                     (item) => (
                       <div
