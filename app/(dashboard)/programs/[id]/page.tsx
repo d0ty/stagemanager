@@ -612,8 +612,8 @@ export default function ProgramDetailPage({
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="w-full justify-start bg-slate-100 flex-wrap h-auto">
+      <Tabs defaultValue="overview" className="w-full max-w-[90vw]">
+        <TabsList className="w-full justify-start bg-slate-100 h-auto overflow-x-auto inline-flex">
           <TabsTrigger value="overview" className="gap-2">
             <LayoutDashboard className="w-4 h-4" /> Áttekintés
           </TabsTrigger>
