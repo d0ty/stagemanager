@@ -302,9 +302,9 @@ export default function Chat({
   };
 
   return (
-    <CardContent className="flex-1 flex flex-col p-0 overflow-hidden min-h-0">
+    <CardContent className="flex-1 flex flex-col p-0 overflow-hidden min-h-0 max-h-[60vh]">
       <ScrollArea
-        className="flex-1 overflow-hidden min-h-0"
+        className="flex-1 overflow-y-scroll min-h-0"
         ref={(node) => {
           // Grab the Radix viewport element inside the ScrollArea root
           if (node) {
