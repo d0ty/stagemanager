@@ -40,7 +40,7 @@ async function add_permission(
   fileId: string,
   type: string = "anyone",
   role: string = "writer",
-  emailAddress: string | undefined,
+  emailAddress: string | undefined = undefined,
   pendingOwner: true | undefined = undefined,
 ) {
   await drive!.permissions.create({
@@ -68,14 +68,7 @@ export async function createProgramFolder(program: Program) {
     fields: "id",
   });
 
-  await add_permission(
-    drive,
-    folder.data.id!,
-    "user",
-    "writer",
-    "pokgtech.a@gmail.com",
-    true,
-  );
+  await add_permission(drive, folder.data.id!);
 
   const { error } = await (await createClient())
     .from("program")
