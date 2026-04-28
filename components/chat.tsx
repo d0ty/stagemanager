@@ -234,8 +234,6 @@ export default function Chat({
     if (isInitialLoadRef.current) {
       isInitialLoadRef.current = false;
       messagesEndRef.current?.scrollIntoView({ behavior: "instant" });
-    } else if (isNearBottomRef.current) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
 
