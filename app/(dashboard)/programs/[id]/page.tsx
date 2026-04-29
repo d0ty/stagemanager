@@ -1044,7 +1044,7 @@ export default function ProgramDetailPage({
                             </span>
                             {task.assigned_to && (
                               <p className="text-xs text-slate-500 mt-0.5">
-                                {task.assigned_to}
+                                {getStaffName(task.assigned_to)}
                               </p>
                             )}
                           </div>
@@ -1160,7 +1160,7 @@ export default function ProgramDetailPage({
                             </span>
                             {task.assigned_to && (
                               <p className="text-xs text-slate-500 mt-0.5">
-                                {task.assigned_to}
+                                {getStaffName(task.assigned_to)}
                               </p>
                             )}
                           </div>
@@ -2019,7 +2019,6 @@ export default function ProgramDetailPage({
                   <SelectValue placeholder="Válassz személyt..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nincs kijelölve</SelectItem>
                   {staffList.map((s) => (
                     <SelectItem key={s.id} value={s.id}>
                       {s.name || s.id}
