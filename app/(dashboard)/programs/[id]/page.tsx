@@ -1758,12 +1758,16 @@ export default function ProgramDetailPage({
                   <SelectValue placeholder="Válassz feladatkört..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Stage">Stage (Színpad)</SelectItem>
+                  <SelectItem value="ugyelo">Ügyelő</SelectItem>
                   <SelectItem value="hangtechnikus">Hangtechnikus</SelectItem>
                   <SelectItem value="fenytechnikus">Fénytechnikus</SelectItem>
-                  <SelectItem value="fotos">Fotós</SelectItem>
-                  <SelectItem value="videos">Videós</SelectItem>
                   <SelectItem value="vetito">Vetítő</SelectItem>
+                  <SelectItem value="szervezo">Szervező</SelectItem>
+                  <SelectItem value="supervisor">Supervisor</SelectItem>
+                  <SelectItem value="ugyeloasszistens">
+                    Ügyelőasszistens
+                  </SelectItem>
+                  <SelectItem value="egyeb">Egyéb</SelectItem>
                 </SelectContent>
               </Select>
             </div>
