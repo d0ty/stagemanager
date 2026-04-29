@@ -112,6 +112,8 @@ export default function EditProgramPage({
     );
   }
 
+  console.log(program, formData);
+
   return (
     <div className="space-y-8 animate-in fade-in">
       <div className="flex items-center gap-4">
@@ -182,9 +184,10 @@ export default function EditProgramPage({
                 <Label htmlFor="status">Állapot</Label>
                 <Select
                   value={formData.status}
-                  onValueChange={(value) =>
-                    handleChange("status", value as ProgramState)
-                  }
+                  onValueChange={(value) => {
+                    if (!value) return;
+                    handleChange("status", value as ProgramState);
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -204,7 +207,10 @@ export default function EditProgramPage({
                 <Label htmlFor="leader">Felelős Személy</Label>
                 <Select
                   value={formData.leader}
-                  onValueChange={(value) => handleChange("leader", value)}
+                  onValueChange={(value) => {
+                    if (!value) return;
+                    handleChange("leader", value);
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Válassz felelőst..." />
