@@ -41,12 +41,7 @@ import {
 } from "@/components/ui/collapsible";
 import { listPrograms } from "@/lib/db/program";
 import { listStaff } from "@/lib/db/staff";
-import {
-  listTasks,
-  createTask,
-  updateTask,
-  deleteTask,
-} from "@/lib/db/task";
+import { listTasks, createTask, updateTask, deleteTask } from "@/lib/db/task";
 import type { Task, TaskType, TaskPriority, TaskStatus } from "@/lib/db/types";
 
 export default function TasksPage() {
@@ -69,7 +64,7 @@ export default function TasksPage() {
 
   const { data: programs = [] } = useQuery({
     queryKey: ["programs"],
-    queryFn: () => listPrograms("date"),
+    queryFn: () => listPrograms(),
   });
 
   const { data: allTasks = [] } = useQuery({
@@ -155,8 +150,7 @@ export default function TasksPage() {
   };
 
   const toggleTaskStatus = (task: Task) => {
-    const newStatus: TaskStatus =
-      task.status === "kesz" ? "teendo" : "kesz";
+    const newStatus: TaskStatus = task.status === "kesz" ? "teendo" : "kesz";
     updateTaskMutation.mutate({
       id: task.id,
       data: { status: newStatus },
@@ -257,26 +251,33 @@ export default function TasksPage() {
                   Általános feladatok
                 </div>
               </button>
-              {programs.map((prog) => (
-                <button
-                  key={prog.id}
-                  onClick={() => setSelectedProgramId(prog.id)}
-                  className={`p-4 text-left border-l-4 transition-all hover:bg-slate-50 ${
-                    selectedProgramId === prog.id
-                      ? `border-${themeColor}-600 bg-${themeColor === "indigo" ? "indigo" : "amber"}-50`
-                      : "border-transparent"
-                  }`}
-                >
-                  <div className="font-medium truncate">
-                    {prog.description || "Névtelen"}
-                  </div>
-                  <div className="text-xs text-slate-500">
-                    {prog.date
-                      ? new Date(prog.date).toLocaleDateString("hu")
-                      : "-"}
-                  </div>
-                </button>
-              ))}
+              {programs
+                .filter(
+                  (p) =>
+                    Date.parse(p.date!) + 24 * 3600 * 1000 > Date.now() &&
+                    p.status !== "lemondva" &&
+                    p.status !== "lezarva",
+                )
+                .map((prog) => (
+                  <button
+                    key={prog.id}
+                    onClick={() => setSelectedProgramId(prog.id)}
+                    className={`p-4 text-left border-l-4 transition-all hover:bg-slate-50 ${
+                      selectedProgramId === prog.id
+                        ? `border-${themeColor}-600 bg-${themeColor === "indigo" ? "indigo" : "amber"}-50`
+                        : "border-transparent"
+                    }`}
+                  >
+                    <div className="font-medium truncate">
+                      {prog.description || "Névtelen"}
+                    </div>
+                    <div className="text-xs text-slate-500">
+                      {prog.date
+                        ? new Date(prog.date).toLocaleDateString("hu")
+                        : "-"}
+                    </div>
+                  </button>
+                ))}
               {programs.length === 0 && (
                 <div className="p-4 text-sm text-slate-400">
                   Nincs elérhető esemény.
@@ -329,10 +330,7 @@ export default function TasksPage() {
                               Nincs eseményhez kötve
                             </SelectItem>
                             {programs.map((p) => (
-                              <SelectItem
-                                key={p.id}
-                                value={p.id.toString()}
-                              >
+                              <SelectItem key={p.id} value={p.id.toString()}>
                                 {p.description || "Névtelen"}
                               </SelectItem>
                             ))}
@@ -353,9 +351,7 @@ export default function TasksPage() {
 
                       <div className="flex flex-col md:flex-row gap-3">
                         <div className="grid gap-2 w-full md:w-48">
-                          <label className="text-xs font-medium">
-                            Kinek?
-                          </label>
+                          <label className="text-xs font-medium">Kinek?</label>
                           <Select name="assigned_to" defaultValue="none">
                             <SelectTrigger>
                               <SelectValue placeholder="Válassz..." />
@@ -381,9 +377,7 @@ export default function TasksPage() {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="alacsony">
-                                Alacsony
-                              </SelectItem>
+                              <SelectItem value="alacsony">Alacsony</SelectItem>
                               <SelectItem value="kozepes">Közepes</SelectItem>
                               <SelectItem value="magas">Magas</SelectItem>
                             </SelectContent>
@@ -474,10 +468,7 @@ export default function TasksPage() {
                         {task.priority ?? "kozepes"}
                       </Badge>
                       {task.program && (
-                        <Badge
-                          variant="secondary"
-                          className="text-[10px]"
-                        >
+                        <Badge variant="secondary" className="text-[10px]">
                           {getProgramName(task.program)}
                         </Badge>
                       )}
@@ -631,17 +622,12 @@ export default function TasksPage() {
             </div>
             <div className="grid gap-2">
               <Label>Esemény</Label>
-              <Select
-                value={editProgramId}
-                onValueChange={setEditProgramId}
-              >
+              <Select value={editProgramId} onValueChange={setEditProgramId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Válassz eseményt..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">
-                    Nincs eseményhez kötve
-                  </SelectItem>
+                  <SelectItem value="none">Nincs eseményhez kötve</SelectItem>
                   {programs.map((prog) => (
                     <SelectItem key={prog.id} value={prog.id.toString()}>
                       {prog.description || "Névtelen"}
@@ -652,10 +638,7 @@ export default function TasksPage() {
             </div>
             <div className="grid gap-2">
               <Label>Kinek?</Label>
-              <Select
-                value={editAssignedTo}
-                onValueChange={setEditAssignedTo}
-              >
+              <Select value={editAssignedTo} onValueChange={setEditAssignedTo}>
                 <SelectTrigger>
                   <SelectValue placeholder="Válassz..." />
                 </SelectTrigger>
