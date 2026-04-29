@@ -4,7 +4,7 @@ import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { ArrowLeft, CalendarDays, Save } from "lucide-react";
+import { ArrowLeft, CalendarDays, Save, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getProgram, updateProgram } from "@/lib/db/program";
+import { deleteProgram, getProgram, updateProgram } from "@/lib/db/program";
 import { listStaff } from "@/lib/db/staff";
 import type { ProgramState } from "@/lib/db/types";
 
@@ -73,6 +73,26 @@ export default function EditProgramPage({
       alert("Hiba történt a program frissítése során: " + error.message);
     },
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: () => deleteProgram(programId),
+    onSuccess: () => {
+      window.location.replace(`/programs`);
+    },
+    onError: (error) => {
+      alert("Hiba történt a program törlése során: " + error.message);
+    },
+  });
+
+  const handleDelete = () => {
+    if (
+      confirm(
+        "Biztosan törölni szeretnéd ezt a programot? Figyelem: nem visszavonható művelet",
+      )
+    ) {
+      deleteMutation.mutate();
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -228,22 +248,32 @@ export default function EditProgramPage({
             </div>
 
             {/* Actions */}
-            <div className="flex justify-end gap-3 pt-4 border-t">
-              <Link href={`/programs/${programId}`}>
-                <Button type="button" variant="outline">
-                  Mégse
-                </Button>
-              </Link>
+            <div className="flex justify-between pt-4 border-t">
               <Button
-                type="submit"
-                className="bg-indigo-600 hover:bg-indigo-700 text-white"
-                disabled={updateMutation.isPending}
+                type="button"
+                variant="destructive"
+                onClick={() => handleDelete()}
               >
-                <Save className="w-4 h-4 mr-2" />
-                {updateMutation.isPending
-                  ? "Mentés..."
-                  : "Változtatások Mentése"}
+                <Trash className="w-4 h-4 mr-2" />
+                Törlés
               </Button>
+              <div className="gap-3 flex">
+                <Link href={`/programs/${programId}`}>
+                  <Button type="button" variant="outline">
+                    Mégse
+                  </Button>
+                </Link>
+                <Button
+                  type="submit"
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                  disabled={updateMutation.isPending}
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  {updateMutation.isPending
+                    ? "Mentés..."
+                    : "Változtatások Mentése"}
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
