@@ -4,7 +4,7 @@ export * from "./program";
 export * from "./task";
 export * from "./role";
 export * from "./crew-member";
-export * from "./rehearsal";
+export * from "./activity";
 export * from "./chat";
 export * from "./equipment";
 export * from "./program-file";

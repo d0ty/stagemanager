@@ -39,6 +39,7 @@ export type EquipmentCategory =
 export type EquipmentStatus = "elerheto" | "karbantartas" | "selejt";
 export type EquipmentInventory = "foh" | "stage" | "egyeb" | "external";
 export type LoanStatus = "aktiv" | "lezart";
+export type ActivityType = "proba" | "megbeszeles" | "epites" | "bontas";
 
 export interface Role {
   id: number;
@@ -90,9 +91,10 @@ export interface ProgramFile {
   uploaded_by: string | null;
 }
 
-export interface Rehearsal {
+export interface Activity {
   id: number;
   program: number | null;
+  type: ActivityType | null;
   date: string | null;
   lesson_period: string | null;
   notes: string | null;

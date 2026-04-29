@@ -69,11 +69,11 @@ import {
   deleteTask,
 } from "@/lib/db/task";
 import {
-  getRehearsalsByProgram,
-  createRehearsal,
-  updateRehearsal,
-  deleteRehearsal,
-} from "@/lib/db/rehearsal";
+  getActivitysByProgram,
+  createActivity,
+  updateActivity,
+  deleteActivity,
+} from "@/lib/db/activity";
 import { getProgramFiles } from "@/lib/db/program-file";
 import {
   uploadFilesAction,
@@ -88,6 +88,7 @@ import type {
   EquipmentInventory,
   EquipmentLoan,
   EquipmentItem,
+  ActivityType,
 } from "@/lib/db/types";
 import Chat from "@/components/chat";
 import {
@@ -110,8 +111,8 @@ export default function ProgramDetailPage({
   const queryClient = useQueryClient();
 
   const [isCrewDialogOpen, setIsCrewDialogOpen] = useState(false);
-  const [isRehearsalDialogOpen, setIsRehearsalDialogOpen] = useState(false);
-  const [editingRehearsal, setEditingRehearsal] = useState<any>(null);
+  const [isActivityDialogOpen, setIsActivityDialogOpen] = useState(false);
+  const [editingActivity, setEditingActivity] = useState<any>(null);
   const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
   const [isLoanDialogOpen, setIsLoanDialogOpen] = useState(false);
   const [taskType, setTaskType] = useState<"sound" | "light" | null>(null);
@@ -166,9 +167,9 @@ export default function ProgramDetailPage({
     enabled: !isNaN(programId),
   });
 
-  const { data: rehearsals = [] } = useQuery({
-    queryKey: ["rehearsals", programId],
-    queryFn: () => getRehearsalsByProgram(programId),
+  const { data: activities = [] } = useQuery({
+    queryKey: ["activities", programId],
+    queryFn: () => getActivitysByProgram(programId),
     enabled: !isNaN(programId),
   });
 
@@ -222,29 +223,29 @@ export default function ProgramDetailPage({
     },
   });
 
-  const createRehearsalMutation = useMutation({
-    mutationFn: createRehearsal,
+  const createActivityMutation = useMutation({
+    mutationFn: createActivity,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["rehearsals", programId] });
-      setIsRehearsalDialogOpen(false);
-      setEditingRehearsal(null);
+      queryClient.invalidateQueries({ queryKey: ["activities", programId] });
+      setIsActivityDialogOpen(false);
+      setEditingActivity(null);
     },
   });
 
-  const updateRehearsalMutation = useMutation({
+  const updateActivityMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: any }) =>
-      updateRehearsal(id, data),
+      updateActivity(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["rehearsals", programId] });
-      setIsRehearsalDialogOpen(false);
-      setEditingRehearsal(null);
+      queryClient.invalidateQueries({ queryKey: ["activities", programId] });
+      setIsActivityDialogOpen(false);
+      setEditingActivity(null);
     },
   });
 
-  const deleteRehearsalMutation = useMutation({
-    mutationFn: deleteRehearsal,
+  const deleteActivityMutation = useMutation({
+    mutationFn: deleteActivity,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["rehearsals", programId] });
+      queryClient.invalidateQueries({ queryKey: ["activities", programId] });
     },
   });
 
@@ -369,27 +370,28 @@ export default function ProgramDetailPage({
     });
   };
 
-  const handleRehearsalSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleActivitySubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const dateValue = formData.get("date") as string;
     const timeValue = formData.get("time") as string;
     const dateTimeISO = `${dateValue}T${timeValue}:00`;
 
-    const rehearsalData = {
+    const activityData = {
       program: programId,
+      type: "proba" as ActivityType,
       date: new Date(dateTimeISO).toISOString(),
       lesson_period: (formData.get("lesson_period") as string) || null,
       notes: (formData.get("notes") as string) || null,
     };
 
-    if (editingRehearsal) {
-      updateRehearsalMutation.mutate({
-        id: editingRehearsal.id,
-        data: rehearsalData,
+    if (editingActivity) {
+      updateActivityMutation.mutate({
+        id: editingActivity.id,
+        data: activityData,
       });
     } else {
-      createRehearsalMutation.mutate(rehearsalData);
+      createActivityMutation.mutate(activityData);
     }
   };
 
@@ -629,7 +631,7 @@ export default function ProgramDetailPage({
           <TabsTrigger value="files" className="gap-2">
             <FileText className="w-4 h-4" /> Fájlok
           </TabsTrigger>
-          <TabsTrigger value="rehearsals" className="gap-2">
+          <TabsTrigger value="activities" className="gap-2">
             <Calendar className="w-4 h-4" /> Próbák
           </TabsTrigger>
           <TabsTrigger value="timeline" className="gap-2">
@@ -713,19 +715,19 @@ export default function ProgramDetailPage({
               </CardContent>
             </Card>
 
-            {/* Rehearsals Overview */}
+            {/* Activitys Overview */}
             <Card className="hover:shadow-md transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
                 <CardTitle className="text-sm font-medium">Próbák</CardTitle>
                 <Calendar className="w-4 h-4 text-slate-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{rehearsals.length}</div>
+                <div className="text-2xl font-bold">{activities.length}</div>
                 <p className="text-xs text-slate-500 mt-1 mb-4">
                   próba időpont
                 </p>
                 <div className="space-y-2 max-h-32 overflow-y-auto">
-                  {rehearsals
+                  {activities
                     .filter((r) => r.date)
                     .sort(
                       (a, b) =>
@@ -753,7 +755,7 @@ export default function ProgramDetailPage({
                         </div>
                       </div>
                     ))}
-                  {rehearsals.length === 0 && (
+                  {activities.length === 0 && (
                     <p className="text-xs text-slate-400 italic">
                       Még nincsenek próbák.
                     </p>
@@ -1551,8 +1553,8 @@ export default function ProgramDetailPage({
           </Card>
         </TabsContent>
 
-        {/* Rehearsals Tab */}
-        <TabsContent value="rehearsals" className="mt-6">
+        {/* Activitys Tab */}
+        <TabsContent value="activities" className="mt-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="flex items-center gap-2">
@@ -1562,8 +1564,8 @@ export default function ProgramDetailPage({
                 <Button
                   size="sm"
                   onClick={() => {
-                    setEditingRehearsal(null);
-                    setIsRehearsalDialogOpen(true);
+                    setEditingActivity(null);
+                    setIsActivityDialogOpen(true);
                   }}
                 >
                   <Plus className="w-4 h-4 mr-2" />
@@ -1573,42 +1575,42 @@ export default function ProgramDetailPage({
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {rehearsals.length === 0 ? (
+                {activities.length === 0 ? (
                   <div className="text-center py-8 text-slate-400">
                     Még nincs próba időpont rögzítve.
                   </div>
                 ) : (
-                  rehearsals
+                  activities
                     .sort(
                       (a, b) =>
                         new Date(a.date || 0).getTime() -
                         new Date(b.date || 0).getTime(),
                     )
-                    .map((rehearsal) => (
+                    .map((activitiy) => (
                       <div
-                        key={rehearsal.id}
+                        key={activitiy.id}
                         className="flex items-start justify-between p-4 bg-white rounded-lg border border-slate-200 group hover:shadow-sm transition"
                       >
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
                             <Calendar className="w-4 h-4 text-indigo-600" />
                             <span className="font-medium text-slate-900">
-                              {rehearsal.date
+                              {activitiy.date
                                 ? format(
-                                    new Date(rehearsal.date),
+                                    new Date(activitiy.date),
                                     "dd/MM/yyyy HH:mm",
                                   )
                                 : "-"}
                             </span>
-                            {rehearsal.lesson_period && (
+                            {activitiy.lesson_period && (
                               <Badge variant="outline" className="ml-2 text-xs">
-                                {rehearsal.lesson_period}
+                                {activitiy.lesson_period}
                               </Badge>
                             )}
                           </div>
-                          {rehearsal.notes && (
+                          {activitiy.notes && (
                             <p className="text-sm text-slate-600 mt-2 pl-6">
-                              {rehearsal.notes}
+                              {activitiy.notes}
                             </p>
                           )}
                         </div>
@@ -1619,8 +1621,8 @@ export default function ProgramDetailPage({
                               size="icon"
                               className="h-8 w-8 text-slate-400 hover:text-indigo-600"
                               onClick={() => {
-                                setEditingRehearsal(rehearsal);
-                                setIsRehearsalDialogOpen(true);
+                                setEditingActivity(activitiy);
+                                setIsActivityDialogOpen(true);
                               }}
                             >
                               <Edit className="w-4 h-4" />
@@ -1633,7 +1635,7 @@ export default function ProgramDetailPage({
                               className="h-8 w-8 text-red-400 hover:text-red-600"
                               onClick={() => {
                                 if (confirm("Biztosan törlöd ezt a próbát?")) {
-                                  deleteRehearsalMutation.mutate(rehearsal.id);
+                                  deleteActivityMutation.mutate(activitiy.id);
                                 }
                               }}
                             >
@@ -1661,8 +1663,8 @@ export default function ProgramDetailPage({
               <div className="space-y-4">
                 {[
                   { type: "program", date: program.date, data: program },
-                  ...rehearsals.map((r) => ({
-                    type: "rehearsal",
+                  ...activities.map((r) => ({
+                    type: "activitiy",
                     date: r.date,
                     data: r,
                   })),
@@ -1696,16 +1698,16 @@ export default function ProgramDetailPage({
                             {format(new Date(event.date!), "HH:mm")}
                           </span>
                         </div>
-                        {event.type === "rehearsal" &&
-                          (event.data as (typeof rehearsals)[0]).notes && (
+                        {event.type === "activitiy" &&
+                          (event.data as (typeof activities)[0]).notes && (
                             <p className="text-sm text-slate-600 mt-1">
-                              {(event.data as (typeof rehearsals)[0]).notes}
+                              {(event.data as (typeof activities)[0]).notes}
                             </p>
                           )}
                       </div>
                     </div>
                   ))}
-                {rehearsals.length === 0 && !program.date && (
+                {activities.length === 0 && !program.date && (
                   <div className="text-center py-12 text-slate-400">
                     <Clock className="w-16 h-16 mx-auto mb-4 text-slate-200" />
                     <p>Még nincsenek események.</p>
@@ -1797,18 +1799,18 @@ export default function ProgramDetailPage({
         </DialogContent>
       </Dialog>
 
-      {/* Rehearsal Dialog */}
+      {/* Activity Dialog */}
       <Dialog
-        open={isRehearsalDialogOpen}
-        onOpenChange={setIsRehearsalDialogOpen}
+        open={isActivityDialogOpen}
+        onOpenChange={setIsActivityDialogOpen}
       >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {editingRehearsal ? "Próba Szerkesztése" : "Új Próba"}
+              {editingActivity ? "Próba Szerkesztése" : "Új Próba"}
             </DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleRehearsalSubmit} className="space-y-4 mt-4">
+          <form onSubmit={handleActivitySubmit} className="space-y-4 mt-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="date">Dátum</Label>
@@ -1816,8 +1818,8 @@ export default function ProgramDetailPage({
                   type="date"
                   name="date"
                   defaultValue={
-                    editingRehearsal?.date
-                      ? format(new Date(editingRehearsal.date), "yyyy-MM-dd")
+                    editingActivity?.date
+                      ? format(new Date(editingActivity.date), "yyyy-MM-dd")
                       : ""
                   }
                   required
@@ -1829,8 +1831,8 @@ export default function ProgramDetailPage({
                   type="time"
                   name="time"
                   defaultValue={
-                    editingRehearsal?.date
-                      ? format(new Date(editingRehearsal.date), "HH:mm")
+                    editingActivity?.date
+                      ? format(new Date(editingActivity.date), "HH:mm")
                       : ""
                   }
                   required
@@ -1842,7 +1844,7 @@ export default function ProgramDetailPage({
               <Input
                 name="lesson_period"
                 placeholder="pl. 3. óra, 4-5. óra"
-                defaultValue={editingRehearsal?.lesson_period || ""}
+                defaultValue={editingActivity?.lesson_period || ""}
               />
             </div>
             <div className="space-y-2">
@@ -1850,7 +1852,7 @@ export default function ProgramDetailPage({
               <Textarea
                 name="notes"
                 placeholder="Technikai igények, résztvevők, stb..."
-                defaultValue={editingRehearsal?.notes || ""}
+                defaultValue={editingActivity?.notes || ""}
                 className="min-h-[100px]"
               />
             </div>
@@ -1859,8 +1861,8 @@ export default function ProgramDetailPage({
                 type="button"
                 variant="outline"
                 onClick={() => {
-                  setIsRehearsalDialogOpen(false);
-                  setEditingRehearsal(null);
+                  setIsActivityDialogOpen(false);
+                  setEditingActivity(null);
                 }}
               >
                 Mégse
@@ -1869,11 +1871,11 @@ export default function ProgramDetailPage({
                 type="submit"
                 className="bg-indigo-600 hover:bg-indigo-700 text-white"
                 disabled={
-                  createRehearsalMutation.isPending ||
-                  updateRehearsalMutation.isPending
+                  createActivityMutation.isPending ||
+                  updateActivityMutation.isPending
                 }
               >
-                {editingRehearsal ? "Mentés" : "Létrehozás"}
+                {editingActivity ? "Mentés" : "Létrehozás"}
               </Button>
             </div>
           </form>
