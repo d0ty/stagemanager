@@ -38,7 +38,7 @@ export default function ProgramsPage() {
 
   const { data: programs = [] } = useQuery({
     queryKey: ["programs"],
-    queryFn: () => listPrograms("date"),
+    queryFn: () => listPrograms(),
   });
 
   const { data: staffList = [] } = useQuery({
@@ -60,17 +60,22 @@ export default function ProgramsPage() {
   const filteredPrograms = programs.filter(
     (p) =>
       (p.description?.toLowerCase() ?? "").includes(searchTerm.toLowerCase()) ||
-      (p.location?.toLowerCase() ?? "").includes(searchTerm.toLowerCase())
+      (p.location?.toLowerCase() ?? "").includes(searchTerm.toLowerCase()),
   );
 
-  const activeStatuses = ["varakozo", "tervezes", "proba_alatt", "veglegesites"];
+  const activeStatuses = [
+    "varakozo",
+    "tervezes",
+    "proba_alatt",
+    "veglegesites",
+  ];
   const archiveStatuses = ["lezarva", "lemondva"];
 
   const activePrograms = filteredPrograms.filter((p) =>
-    activeStatuses.includes(p.status ?? "")
+    activeStatuses.includes(p.status ?? ""),
   );
   const archivePrograms = filteredPrograms.filter((p) =>
-    archiveStatuses.includes(p.status ?? "")
+    archiveStatuses.includes(p.status ?? ""),
   );
 
   return (
@@ -125,7 +130,9 @@ export default function ProgramsPage() {
                     >
                       <span className="text-xs uppercase font-bold">
                         {program.date
-                          ? format(new Date(program.date), "MMM", { locale: hu })
+                          ? format(new Date(program.date), "MMM", {
+                              locale: hu,
+                            })
                           : "-"}
                       </span>
                       <span className="text-xl font-bold">
@@ -276,7 +283,9 @@ export default function ProgramsPage() {
                     >
                       <span className="text-xs uppercase font-bold">
                         {program.date
-                          ? format(new Date(program.date), "MMM", { locale: hu })
+                          ? format(new Date(program.date), "MMM", {
+                              locale: hu,
+                            })
                           : "-"}
                       </span>
                       <span className="text-xl font-bold">
