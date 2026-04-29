@@ -19,12 +19,14 @@ export type ProgramState =
   | "lemondva"
   | "lezarva";
 export type CrewPosition =
-  | "Stage"
+  | "ugyelo"
   | "hangtechnikus"
   | "fenytechnikus"
-  | "fotos"
-  | "videos"
-  | "vetito";
+  | "vetito"
+  | "supervisor"
+  | "egyeb"
+  | "ugyeloasszistens"
+  | "szerverzo";
 export type TaskType = "sound" | "light";
 export type TaskPriority = "alacsony" | "kozepes" | "magas";
 export type TaskStatus = "teendo" | "folyamatban" | "kesz";

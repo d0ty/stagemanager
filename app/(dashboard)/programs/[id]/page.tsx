@@ -1220,7 +1220,7 @@ export default function ProgramDetailPage({
           </div>
         </TabsContent>
 
-        {/* Staff Tab */}
+        {/* Crew Tab */}
         <TabsContent value="staff" className="mt-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
@@ -1252,15 +1252,21 @@ export default function ProgramDetailPage({
                   crew.map((c) => (
                     <div
                       key={c.id}
-                      className="flex items-center justify-between group p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition"
+                      className="flex items-center justify-between group p-3 rounded-lg hover:bg-slate-100 transition bg-slate-50"
                     >
                       <div className="flex items-center gap-3">
                         <User className="w-4 h-4 text-slate-400" />
                         <div>
-                          <p className="text-sm font-medium">
+                          <p
+                            className={`text-sm font-medium ${c.role === "egyeb" ? "text-slate-400" : ""}`}
+                          >
                             {getStaffName(c.staff)}
                           </p>
-                          <p className="text-xs text-slate-500">{c.role}</p>
+                          <p
+                            className={`text-xs text-slate-${c.role === "egyeb" ? "400" : "500"}`}
+                          >
+                            {c.role}
+                          </p>
                         </div>
                       </div>
                       {can("programs", "delete") && (
