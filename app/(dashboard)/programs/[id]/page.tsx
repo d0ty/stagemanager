@@ -89,6 +89,7 @@ import type {
   EquipmentLoan,
   EquipmentItem,
   ActivityType,
+  Activity,
 } from "@/lib/db/types";
 import Chat from "@/components/chat";
 import {
@@ -379,7 +380,7 @@ export default function ProgramDetailPage({
 
     const activityData = {
       program: programId,
-      type: "proba" as ActivityType,
+      type: formData.get("type") as ActivityType,
       date: new Date(dateTimeISO).toISOString(),
       lesson_period: (formData.get("lesson_period") as string) || null,
       notes: (formData.get("notes") as string) || null,
@@ -630,9 +631,6 @@ export default function ProgramDetailPage({
           </TabsTrigger>
           <TabsTrigger value="files" className="gap-2">
             <FileText className="w-4 h-4" /> Fájlok
-          </TabsTrigger>
-          <TabsTrigger value="activities" className="gap-2">
-            <Calendar className="w-4 h-4" /> Próbák
           </TabsTrigger>
           <TabsTrigger value="timeline" className="gap-2">
             <Clock className="w-4 h-4" /> Timeline
@@ -1553,12 +1551,12 @@ export default function ProgramDetailPage({
           </Card>
         </TabsContent>
 
-        {/* Activitys Tab */}
-        <TabsContent value="activities" className="mt-6">
+        {/* Timeline Tab */}
+        <TabsContent value="timeline" className="mt-6">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader className="flex flex-row justify-between gap-2">
               <CardTitle className="flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-indigo-600" /> Próbák
+                <Clock className="w-5 h-5 text-indigo-600" /> Program Timeline
               </CardTitle>
               {can("programs", "create") && (
                 <Button
@@ -1569,103 +1567,23 @@ export default function ProgramDetailPage({
                   }}
                 >
                   <Plus className="w-4 h-4 mr-2" />
-                  Új Próba
+                  Új Időpont
                 </Button>
               )}
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {activities.length === 0 ? (
-                  <div className="text-center py-8 text-slate-400">
-                    Még nincs próba időpont rögzítve.
-                  </div>
-                ) : (
-                  activities
-                    .sort(
-                      (a, b) =>
-                        new Date(a.date || 0).getTime() -
-                        new Date(b.date || 0).getTime(),
-                    )
-                    .map((activitiy) => (
-                      <div
-                        key={activitiy.id}
-                        className="flex items-start justify-between p-4 bg-white rounded-lg border border-slate-200 group hover:shadow-sm transition"
-                      >
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Calendar className="w-4 h-4 text-indigo-600" />
-                            <span className="font-medium text-slate-900">
-                              {activitiy.date
-                                ? format(
-                                    new Date(activitiy.date),
-                                    "dd/MM/yyyy HH:mm",
-                                  )
-                                : "-"}
-                            </span>
-                            {activitiy.lesson_period && (
-                              <Badge variant="outline" className="ml-2 text-xs">
-                                {activitiy.lesson_period}
-                              </Badge>
-                            )}
-                          </div>
-                          {activitiy.notes && (
-                            <p className="text-sm text-slate-600 mt-2 pl-6">
-                              {activitiy.notes}
-                            </p>
-                          )}
-                        </div>
-                        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition">
-                          {can("programs", "edit") && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-slate-400 hover:text-indigo-600"
-                              onClick={() => {
-                                setEditingActivity(activitiy);
-                                setIsActivityDialogOpen(true);
-                              }}
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                          )}
-                          {can("programs", "delete") && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-red-400 hover:text-red-600"
-                              onClick={() => {
-                                if (confirm("Biztosan törlöd ezt a próbát?")) {
-                                  deleteActivityMutation.mutate(activitiy.id);
-                                }
-                              }}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    ))
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Timeline Tab */}
-        <TabsContent value="timeline" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="w-5 h-5 text-indigo-600" /> Program Timeline
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
               <div className="space-y-4">
                 {[
-                  { type: "program", date: program.date, data: program },
+                  {
+                    type: "program",
+                    date: program.date,
+                    data: program,
+                    lesson_period: null,
+                  },
                   ...activities.map((r) => ({
-                    type: "activitiy",
+                    type: r.type,
                     date: r.date,
+                    lesson_period: r.lesson_period,
                     data: r,
                   })),
                 ]
@@ -1677,7 +1595,7 @@ export default function ProgramDetailPage({
                   .map((event, idx) => (
                     <div
                       key={idx}
-                      className="flex items-start gap-3 p-3 bg-slate-50 rounded-lg border-l-4 border-indigo-500"
+                      className="flex group items-start gap-3 p-3 bg-slate-50 rounded-lg border-l-4 border-indigo-500"
                     >
                       <div className="flex-shrink-0 w-12 h-12 bg-indigo-100 rounded-lg flex flex-col items-center justify-center text-indigo-700">
                         <span className="text-xs uppercase font-bold">
@@ -1692,19 +1610,63 @@ export default function ProgramDetailPage({
                           <span className="font-medium">
                             {event.type === "program"
                               ? "🎬 Program Dátuma"
-                              : "🎭 Próba"}
+                              : event.type === "proba"
+                                ? "🎭 Próba"
+                                : event.type === "megbeszeles"
+                                  ? "📝 Megbeszélés"
+                                  : event.type === "epites"
+                                    ? "💡 Építés"
+                                    : event.type === "bontas"
+                                      ? "🚧 Bontás"
+                                      : "-"}
                           </span>
                           <span className="text-xs text-slate-500">
                             {format(new Date(event.date!), "HH:mm")}
                           </span>
+                          {event.lesson_period && (
+                            <Badge variant="outline" className="ml-2 text-xs">
+                              {event.lesson_period}
+                            </Badge>
+                          )}
                         </div>
-                        {event.type === "activitiy" &&
-                          (event.data as (typeof activities)[0]).notes && (
+                        {event.type !== "program" &&
+                          (event.data as Activity).notes && (
                             <p className="text-sm text-slate-600 mt-1">
-                              {(event.data as (typeof activities)[0]).notes}
+                              {(event.data as Activity).notes}
                             </p>
                           )}
                       </div>
+                      {event.type !== "program" && (
+                        <div className="flex gap-2 group-hover:opacity-100 transition opacity-0">
+                          {can("programs", "edit") && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-slate-400 hover:text-indigo-600"
+                              onClick={() => {
+                                setEditingActivity(event.data);
+                                setIsActivityDialogOpen(true);
+                              }}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                          )}
+                          {can("programs", "delete") && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-red-400 hover:text-red-600"
+                              onClick={() => {
+                                if (confirm("Biztosan törlöd ezt a próbát?")) {
+                                  deleteActivityMutation.mutate(event.data.id);
+                                }
+                              }}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   ))}
                 {activities.length === 0 && !program.date && (
@@ -1807,10 +1769,24 @@ export default function ProgramDetailPage({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {editingActivity ? "Próba Szerkesztése" : "Új Próba"}
+              {editingActivity ? "Időpont Szerkesztése" : "Új Időpont"}
             </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleActivitySubmit} className="space-y-4 mt-4">
+            <div className="space-y-2">
+              <Label htmlFor="type">Típus</Label>
+              <Select name="type" required defaultValue={editingActivity?.type}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Válassz típust..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="proba">Próba</SelectItem>
+                  <SelectItem value="megbeszeles">Megbeszélés</SelectItem>
+                  <SelectItem value="epites">Építés</SelectItem>
+                  <SelectItem value="bontas">Bontás</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="date">Dátum</Label>
