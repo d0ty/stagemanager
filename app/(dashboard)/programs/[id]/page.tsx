@@ -121,6 +121,7 @@ export default function ProgramDetailPage({
   const [addingRoles, setAddingRoles] = useState<CrewPosition[]>([]);
   const [addingRole, setAddingRole] = useState<CrewPosition | null>(null);
   const [removingRoles, setRemovingRoles] = useState<CrewMember[]>([]);
+  const [isRoleOther, setIsRoleOther] = useState(false);
   const [isActivityDialogOpen, setIsActivityDialogOpen] = useState(false);
   const [editingActivity, setEditingActivity] = useState<any>(null);
   const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
@@ -371,20 +372,27 @@ export default function ProgramDetailPage({
 
   const handleCrewSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const staff =
-      (new FormData(e.currentTarget).get("staff") as string) ??
-      editingCrew!.staff;
-    console.log(staff, addingRoles, removingRoles);
-    addingRoles.forEach((role) => {
+    const formData = new FormData(e.currentTarget);
+    const staff = (formData.get("staff") as string) ?? editingCrew!.staff;
+    if (isRoleOther) {
       createCrewMutation.mutate({
         staff,
         program: programId,
-        role,
+        role: "egyeb",
       });
-    });
-    removingRoles.forEach((role) => {
-      deleteCrewMutation.mutate(role.id);
-    });
+    } else {
+      addingRoles.forEach((role) => {
+        createCrewMutation.mutate({
+          staff,
+          program: programId,
+          role,
+        });
+      });
+    }
+    if (editingCrew !== null)
+      removingRoles.forEach((role) => {
+        deleteCrewMutation.mutate(role.id);
+      });
     setAddingRoles([]);
     setAddingRole(null);
     setIsCrewDialogOpen(false);
@@ -1251,7 +1259,13 @@ export default function ProgramDetailPage({
                 <Users className="w-5 h-5 text-indigo-600" /> Stáb & Crew
               </CardTitle>
               {can("programs", "create") && (
-                <Button size="sm" onClick={() => setIsCrewDialogOpen(true)}>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setIsCrewDialogOpen(true);
+                    setEditingCrew(null);
+                  }}
+                >
                   <Plus className="w-4 h-4 mr-2" />
                   Crew Hozzáadása
                 </Button>
@@ -1788,78 +1802,99 @@ export default function ProgramDetailPage({
             </div>
             <div className="space-y-2">
               <Label htmlFor="role">Feladatkörök</Label>
-              <div className="flex gap-2">
-                <Select
-                  name="role"
-                  value={addingRole ?? undefined}
-                  onValueChange={(value) =>
-                    setAddingRole(value as CrewPosition)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Válassz feladatkört..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CREW_POSITIONS.filter(
-                      (pos: CrewPosition) =>
-                        !addingRoles.includes(pos) && pos !== "egyeb",
-                    ).map((pos: CrewPosition) => (
-                      <SelectItem key={pos} value={pos}>
-                        {pos}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={() => {
-                    if (addingRole) {
-                      setAddingRoles([...addingRoles, addingRole]);
-                      setAddingRole(null);
-                    }
-                  }}
-                >
-                  <Plus />
-                </Button>
-              </div>
-              <div className="flex gap-2">
-                {editingCrew?.roles.map((role) => (
-                  <Badge
-                    key={role.id}
-                    variant={
-                      removingRoles.includes(role) ? "destructive" : "outline"
-                    }
-                    className="h-8"
-                  >
-                    {role.role}
-                    {role.role !== "leader" && (
-                      <X
-                        onClick={() => {
-                          if (!removingRoles.includes(role)) {
-                            setRemovingRoles([...removingRoles, role]);
-                          } else {
-                            setRemovingRoles(
-                              removingRoles.filter((r) => r !== role),
-                            );
-                          }
-                        }}
-                      />
-                    )}
-                  </Badge>
-                ))}
-                {addingRoles.map((role) => (
-                  <Badge key={role} variant="outline" className="h-8">
-                    {role}
-                    <X
-                      onClick={() =>
-                        setAddingRoles(addingRoles.filter((r) => r !== role))
+              {editingCrew === null && (
+                <>
+                  <br />
+                  <Label htmlFor="other" className="pr-2">
+                    Egyéb
+                  </Label>
+                  <input
+                    type="checkbox"
+                    checked={isRoleOther}
+                    onChange={(e) => setIsRoleOther(e.target.checked)}
+                  />
+                </>
+              )}
+              {!isRoleOther && (
+                <>
+                  <div className="flex gap-2">
+                    <Select
+                      name="role"
+                      value={addingRole ?? undefined}
+                      onValueChange={(value) =>
+                        setAddingRole(value as CrewPosition)
                       }
-                    />
-                  </Badge>
-                ))}{" "}
-              </div>
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Válassz feladatkört..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CREW_POSITIONS.filter(
+                          (pos: CrewPosition) =>
+                            !addingRoles.includes(pos) && pos !== "egyeb",
+                        ).map((pos: CrewPosition) => (
+                          <SelectItem key={pos} value={pos}>
+                            {pos}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => {
+                        if (addingRole) {
+                          setAddingRoles([...addingRoles, addingRole]);
+                          setAddingRole(null);
+                        }
+                      }}
+                    >
+                      <Plus />
+                    </Button>
+                  </div>
+                  <div className="flex gap-2">
+                    {editingCrew?.roles.map((role) => (
+                      <Badge
+                        key={role.id}
+                        variant={
+                          removingRoles.includes(role)
+                            ? "destructive"
+                            : "outline"
+                        }
+                        className="h-8"
+                      >
+                        {role.role}
+                        {role.role !== "leader" && (
+                          <X
+                            onClick={() => {
+                              if (!removingRoles.includes(role)) {
+                                setRemovingRoles([...removingRoles, role]);
+                              } else {
+                                setRemovingRoles(
+                                  removingRoles.filter((r) => r !== role),
+                                );
+                              }
+                            }}
+                          />
+                        )}
+                      </Badge>
+                    ))}
+                    {addingRoles.map((role) => (
+                      <Badge key={role} variant="outline" className="h-8">
+                        {role}
+                        <X
+                          onClick={() =>
+                            setAddingRoles(
+                              addingRoles.filter((r) => r !== role),
+                            )
+                          }
+                        />
+                      </Badge>
+                    ))}{" "}
+                  </div>
+                </>
+              )}
             </div>
             <div className="flex justify-end gap-2">
               <Button
