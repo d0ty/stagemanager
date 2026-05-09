@@ -63,6 +63,7 @@ import {
   getCrewByProgram,
   createCrewMember,
   deleteCrewMember,
+  getCrewPositionName,
 } from "@/lib/db/crew-member";
 import {
   getTasksByProgram,
@@ -692,7 +693,7 @@ export default function ProgramDetailPage({
                       <div className="flex gap-1">
                         {c.roles.map((member_role: CrewMember) => (
                           <Badge key={member_role.id} variant="outline">
-                            {member_role.role}
+                            {getCrewPositionName(member_role.role!)}
                           </Badge>
                         ))}
                       </div>
@@ -1300,7 +1301,7 @@ export default function ProgramDetailPage({
                                     : ""
                                 }
                               >
-                                {member_role.role}
+                                {getCrewPositionName(member_role.role!)}
                               </Badge>
                             ))}
                           </div>
@@ -1833,7 +1834,7 @@ export default function ProgramDetailPage({
                             !addingRoles.includes(pos) && pos !== "egyeb",
                         ).map((pos: CrewPosition) => (
                           <SelectItem key={pos} value={pos}>
-                            {pos}
+                            {getCrewPositionName(pos)}
                           </SelectItem>
                         ))}
                       </SelectContent>

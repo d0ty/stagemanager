@@ -1,5 +1,10 @@
 import { createClient } from "@/lib/supabase/client";
-import type { CrewMember, CrewMemberResult, Program } from "./types";
+import type {
+  CrewMember,
+  CrewMemberResult,
+  CrewPosition,
+  Program,
+} from "./types";
 
 export async function getCrewByProgram(
   program: Program,
@@ -46,4 +51,29 @@ export async function deleteCrewMember(id: number): Promise<void> {
   const supabase = createClient();
   const { error } = await supabase.from("crew_member").delete().eq("id", id);
   if (error) throw error;
+}
+
+export function getCrewPositionName(role: CrewPosition | "leader"): string {
+  switch (role) {
+    case "ugyelo":
+      return "Ügyelő";
+    case "hangtechnikus":
+      return "Hangtechnikus";
+    case "fenytechnikus":
+      return "Fénytechnikus";
+    case "vetito":
+      return "Vetítő";
+    case "supervisor":
+      return "Supervisor";
+    case "egyeb":
+      return "Egyéb";
+    case "ugyeloasszistens":
+      return "Ügyelőasszisztens";
+    case "szerverzo":
+      return "Szervező";
+    case "leader":
+      return "Vezető technikus";
+    default:
+      return role;
+  }
 }
