@@ -3,7 +3,7 @@
 import { use, useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { format } from "date-fns";
+import { format, set } from "date-fns";
 import { hu } from "date-fns/locale";
 import {
   AlertCircle,
@@ -35,6 +35,8 @@ import {
   Upload,
   CircleMinus,
   Search,
+  PlusSquare,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -91,10 +93,12 @@ import type {
   ActivityType,
   Activity,
   CrewMember,
+  CrewMemberResult,
 } from "@/lib/db/types";
 import Chat from "@/components/chat";
 import {
   createEquipmentLoanItem,
+  CREW_POSITIONS,
   deleteLoanItem,
   getEquipmentLoansByProgram,
   listEquipmentItems,
@@ -113,6 +117,10 @@ export default function ProgramDetailPage({
   const queryClient = useQueryClient();
 
   const [isCrewDialogOpen, setIsCrewDialogOpen] = useState(false);
+  const [editingCrew, setEditingCrew] = useState<CrewMemberResult | null>(null);
+  const [addingRoles, setAddingRoles] = useState<CrewPosition[]>([]);
+  const [addingRole, setAddingRole] = useState<CrewPosition | null>(null);
+  const [removingRoles, setRemovingRoles] = useState<CrewMember[]>([]);
   const [isActivityDialogOpen, setIsActivityDialogOpen] = useState(false);
   const [editingActivity, setEditingActivity] = useState<any>(null);
   const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
@@ -361,15 +369,26 @@ export default function ProgramDetailPage({
     return items.filter((i) => !loan_item_set.has(i.id));
   };
 
-  console.log(items);
-  const handleAddCrewMember = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleCrewSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    createCrewMutation.mutate({
-      staff: formData.get("staff") as string,
-      program: programId,
-      role: formData.get("role") as CrewPosition,
+    const staff =
+      (new FormData(e.currentTarget).get("staff") as string) ??
+      editingCrew!.staff;
+    console.log(staff, addingRoles, removingRoles);
+    addingRoles.forEach((role) => {
+      createCrewMutation.mutate({
+        staff,
+        program: programId,
+        role,
+      });
     });
+    removingRoles.forEach((role) => {
+      deleteCrewMutation.mutate(role.id);
+    });
+    setAddingRoles([]);
+    setAddingRole(null);
+    setIsCrewDialogOpen(false);
+    window.location.reload();
   };
 
   const handleActivitySubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -1275,20 +1294,35 @@ export default function ProgramDetailPage({
                           </div>
                         </div>
                       </div>
-                      {/*can("programs", "delete") && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600"
-                          onClick={() => {
-                            if (confirm("Biztosan eltávolítod ezt a tagot?")) {
-                              deleteCrewMutation.mutate(c.id);
-                            }
-                          }}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      )*/}
+                      <div className="flex gap-2 opacity-0 group-hover:opacity-100">
+                        {can("programs", "edit") && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8  text-slate-400 hover:text-slate-600"
+                            onClick={() => {
+                              setEditingCrew(c);
+                              setIsCrewDialogOpen(true);
+                            }}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                        )}
+                        {/*can("programs", "delete") && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600"
+                            onClick={() => {
+                              if (confirm("Biztosan eltávolítod ezt a tagot?")) {
+                                deleteCrewMutation.mutate(c.id);
+                              }
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )*/}
+                      </div>
                     </div>
                   ))
                 ) : (
@@ -1709,43 +1743,119 @@ export default function ProgramDetailPage({
       <Dialog open={isCrewDialogOpen} onOpenChange={setIsCrewDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Crew Tag Hozzáadása</DialogTitle>
+            <DialogTitle>
+              Crew Tag {editingCrew ? "Szerkesztése" : "Hozzáadása"}
+            </DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleAddCrewMember} className="space-y-4 mt-4">
+          <form onSubmit={handleCrewSubmit} className="space-y-4 mt-4">
             <div className="space-y-2">
               <Label htmlFor="staff">Személy</Label>
-              <Select name="staff" required>
+              <Select
+                name="staff"
+                required={editingCrew === null}
+                disabled={editingCrew !== null}
+                defaultValue={editingCrew?.staff}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Válassz személyt..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {staffList.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.name || s.id}
+                  {editingCrew && (
+                    <SelectItem
+                      key={editingCrew.staff}
+                      value={editingCrew.staff}
+                    >
+                      {getStaffName(editingCrew.staff)}
                     </SelectItem>
-                  ))}
+                  )}
+                  {staffList
+                    .filter(
+                      (s) =>
+                        !crew.find((c) => c.staff === s.id) &&
+                        s.id !== editingCrew?.staff,
+                    )
+                    .map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name || s.id}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="role">Feladatkör</Label>
-              <Select name="role" required>
-                <SelectTrigger>
-                  <SelectValue placeholder="Válassz feladatkört..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ugyelo">Ügyelő</SelectItem>
-                  <SelectItem value="hangtechnikus">Hangtechnikus</SelectItem>
-                  <SelectItem value="fenytechnikus">Fénytechnikus</SelectItem>
-                  <SelectItem value="vetito">Vetítő</SelectItem>
-                  <SelectItem value="szervezo">Szervező</SelectItem>
-                  <SelectItem value="supervisor">Supervisor</SelectItem>
-                  <SelectItem value="ugyeloasszistens">
-                    Ügyelőasszistens
-                  </SelectItem>
-                  <SelectItem value="egyeb">Egyéb</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor="role">Feladatkörök</Label>
+              <div className="flex gap-2">
+                <Select
+                  name="role"
+                  value={addingRole ?? undefined}
+                  onValueChange={(value) =>
+                    setAddingRole(value as CrewPosition)
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Válassz feladatkört..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CREW_POSITIONS.filter(
+                      (pos: CrewPosition) =>
+                        !addingRoles.includes(pos) && pos !== "egyeb",
+                    ).map((pos: CrewPosition) => (
+                      <SelectItem key={pos} value={pos}>
+                        {pos}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => {
+                    if (addingRole) {
+                      setAddingRoles([...addingRoles, addingRole]);
+                      setAddingRole(null);
+                    }
+                  }}
+                >
+                  <Plus />
+                </Button>
+              </div>
+              <div className="flex gap-2">
+                {editingCrew?.roles.map((role) => (
+                  <Badge
+                    key={role.id}
+                    variant={
+                      removingRoles.includes(role) ? "destructive" : "outline"
+                    }
+                    className="h-8"
+                  >
+                    {role.role}
+                    {role.role !== "leader" && (
+                      <X
+                        onClick={() => {
+                          if (!removingRoles.includes(role)) {
+                            setRemovingRoles([...removingRoles, role]);
+                          } else {
+                            setRemovingRoles(
+                              removingRoles.filter((r) => r !== role),
+                            );
+                          }
+                        }}
+                      />
+                    )}
+                  </Badge>
+                ))}
+                {addingRoles.map((role) => (
+                  <Badge key={role} variant="outline" className="h-8">
+                    {role}
+                    <X
+                      onClick={() =>
+                        setAddingRoles(addingRoles.filter((r) => r !== role))
+                      }
+                    />
+                  </Badge>
+                ))}{" "}
+              </div>
             </div>
             <div className="flex justify-end gap-2">
               <Button
@@ -1758,9 +1868,11 @@ export default function ProgramDetailPage({
               <Button
                 type="submit"
                 className="bg-indigo-600 hover:bg-indigo-700 text-white"
-                disabled={createCrewMutation.isPending}
+                disabled={
+                  createCrewMutation.isPending || deleteCrewMutation.isPending
+                }
               >
-                Hozzáadás
+                {editingCrew ? "Mentés" : "Hozzáadás"}
               </Button>
             </div>
           </form>

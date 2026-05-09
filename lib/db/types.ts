@@ -27,6 +27,17 @@ export type CrewPosition =
   | "egyeb"
   | "ugyeloasszistens"
   | "szerverzo";
+export const CREW_POSITIONS: CrewPosition[] = [
+  "ugyelo",
+  "hangtechnikus",
+  "fenytechnikus",
+  "vetito",
+  "supervisor",
+  "egyeb",
+  "ugyeloasszistens",
+  "szerverzo",
+];
+
 export type TaskType = "sound" | "light";
 export type TaskPriority = "alacsony" | "kozepes" | "magas";
 export type TaskStatus = "teendo" | "folyamatban" | "kesz";
