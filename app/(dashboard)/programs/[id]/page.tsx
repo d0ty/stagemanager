@@ -1277,7 +1277,7 @@ export default function ProgramDetailPage({
                   crew.map((c) => (
                     <div
                       key={c.staff}
-                      className={`flex items-center justify-between group p-3 rounded-lg hover:bg-slate-100 transition ${c.roles.some((r) => r.role === "leader") ? "bg-indigo-100" : "border-2 border-slate-200"}`}
+                      className={`flex items-center justify-between group p-3 rounded-lg transition ${c.roles.some((r) => r.role === "leader") ? "bg-indigo-100 hover:bg-indigo-50" : "border-2 border-slate-200  hover:bg-slate-100"}`}
                     >
                       <div className="flex items-center gap-3">
                         <User className="w-4 h-4 text-slate-400" />
@@ -1322,24 +1322,25 @@ export default function ProgramDetailPage({
                             <Edit className="w-4 h-4" />
                           </Button>
                         )}
-                        {can("programs", "delete") && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600"
-                            onClick={() => {
-                              if (
-                                confirm("Biztosan eltávolítod ezt a tagot?")
-                              ) {
-                                c.roles.forEach((role) => {
-                                  deleteCrewMutation.mutate(role.id);
-                                });
-                              }
-                            }}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        )}
+                        {can("programs", "delete") &&
+                          c.staff !== program.leader && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600"
+                              onClick={() => {
+                                if (
+                                  confirm("Biztosan eltávolítod ezt a tagot?")
+                                ) {
+                                  c.roles.forEach((role) => {
+                                    deleteCrewMutation.mutate(role.id);
+                                  });
+                                }
+                              }}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
                       </div>
                     </div>
                   ))
