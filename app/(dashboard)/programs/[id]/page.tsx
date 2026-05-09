@@ -1308,20 +1308,24 @@ export default function ProgramDetailPage({
                             <Edit className="w-4 h-4" />
                           </Button>
                         )}
-                        {/*can("programs", "delete") && (
+                        {can("programs", "delete") && (
                           <Button
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600"
                             onClick={() => {
-                              if (confirm("Biztosan eltávolítod ezt a tagot?")) {
-                                deleteCrewMutation.mutate(c.id);
+                              if (
+                                confirm("Biztosan eltávolítod ezt a tagot?")
+                              ) {
+                                c.roles.forEach((role) => {
+                                  deleteCrewMutation.mutate(role.id);
+                                });
                               }
                             }}
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
-                        )*/}
+                        )}
                       </div>
                     </div>
                   ))
