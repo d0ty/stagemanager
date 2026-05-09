@@ -81,6 +81,11 @@ export interface CrewMember {
   role: CrewPosition | null;
 }
 
+export interface CrewMemberResult {
+  staff: string;
+  roles: CrewMember[];
+}
+
 export interface ProgramFile {
   id: number;
   program: number | null;

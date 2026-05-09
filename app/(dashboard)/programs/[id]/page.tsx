@@ -90,6 +90,7 @@ import type {
   EquipmentItem,
   ActivityType,
   Activity,
+  CrewMember,
 } from "@/lib/db/types";
 import Chat from "@/components/chat";
 import {
@@ -659,14 +660,20 @@ export default function ProgramDetailPage({
                 <div className="space-y-2 mb-4">
                   {crew.slice(0, 3).map((c) => (
                     <div
-                      key={c.id}
+                      key={c.staff}
                       className="flex items-center justify-between text-sm p-2 bg-slate-50 rounded"
                     >
                       <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-indigo-400"></div>
                         <span>{getStaffName(c.staff)}</span>
                       </div>
-                      <span className="text-xs text-slate-500">{c.role}</span>
+                      <div className="flex gap-1">
+                        {c.roles.map((member_role: CrewMember) => (
+                          <Badge key={member_role.id} variant="outline">
+                            {member_role.role}
+                          </Badge>
+                        ))}
+                      </div>
                     </div>
                   ))}
                   {crew.length > 3 && (
@@ -1251,25 +1258,27 @@ export default function ProgramDetailPage({
                 {crew.length > 0 ? (
                   crew.map((c) => (
                     <div
-                      key={c.id}
+                      key={c.staff}
                       className="flex items-center justify-between group p-3 rounded-lg hover:bg-slate-100 transition bg-slate-50"
                     >
                       <div className="flex items-center gap-3">
                         <User className="w-4 h-4 text-slate-400" />
                         <div>
                           <p
-                            className={`text-sm font-medium ${c.role === "egyeb" ? "text-slate-400" : ""}`}
+                            className={`text-sm font-medium ${c.roles.find((role) => role.role === "egyeb") ? "text-slate-400" : ""}`}
                           >
                             {getStaffName(c.staff)}
                           </p>
-                          <p
-                            className={`text-xs text-slate-${c.role === "egyeb" ? "400" : "500"}`}
-                          >
-                            {c.role}
-                          </p>
+                          <div className="flex gap-1">
+                            {c.roles.map((member_role: CrewMember) => (
+                              <Badge key={member_role.id} variant="outline">
+                                {member_role.role}
+                              </Badge>
+                            ))}
+                          </div>
                         </div>
                       </div>
-                      {can("programs", "delete") && (
+                      {/*can("programs", "delete") && (
                         <Button
                           variant="ghost"
                           size="icon"
@@ -1282,7 +1291,7 @@ export default function ProgramDetailPage({
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
-                      )}
+                      )*/}
                     </div>
                   ))
                 ) : (
