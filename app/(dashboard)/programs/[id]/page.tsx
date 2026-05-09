@@ -674,9 +674,7 @@ export default function ProgramDetailPage({
             {/* Staff Overview */}
             <Card className="hover:shadow-md transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                <CardTitle className="text-sm font-medium">
-                  Stáb & Személyzet
-                </CardTitle>
+                <CardTitle className="text-sm font-medium">Stáb</CardTitle>
                 <Users className="w-4 h-4 text-slate-500" />
               </CardHeader>
               <CardContent>
@@ -1256,7 +1254,7 @@ export default function ProgramDetailPage({
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="flex items-center gap-2">
-                <Users className="w-5 h-5 text-indigo-600" /> Stáb & Crew
+                <Users className="w-5 h-5 text-indigo-600" /> Stáb
               </CardTitle>
               {can("programs", "create") && (
                 <Button
@@ -1267,7 +1265,7 @@ export default function ProgramDetailPage({
                   }}
                 >
                   <Plus className="w-4 h-4 mr-2" />
-                  Crew Hozzáadása
+                  Új stábtag
                 </Button>
               )}
             </CardHeader>
@@ -1763,7 +1761,7 @@ export default function ProgramDetailPage({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              Crew Tag {editingCrew ? "Szerkesztése" : "Hozzáadása"}
+              Stábtag {editingCrew ? "Szerkesztése" : "Hozzáadása"}
             </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleCrewSubmit} className="space-y-4 mt-4">
