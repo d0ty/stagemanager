@@ -158,9 +158,9 @@ export default function ProgramDetailPage({
   });
 
   const { data: crew = [] } = useQuery({
-    queryKey: ["crew", programId],
-    queryFn: () => getCrewByProgram(programId),
-    enabled: !isNaN(programId),
+    queryKey: ["crew", program],
+    queryFn: () => getCrewByProgram(program!),
+    enabled: program !== null,
   });
 
   const { data: tasks = [] } = useQuery({
@@ -654,14 +654,11 @@ export default function ProgramDetailPage({
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{uniqueStaffCount} fő</div>
-                <p className="text-xs text-slate-500 mt-1 mb-4">
-                  Felelős: {getStaffName(program.leader)}
-                </p>
                 <div className="space-y-2 mb-4">
                   {crew.slice(0, 3).map((c) => (
                     <div
                       key={c.staff}
-                      className="flex items-center justify-between text-sm p-2 bg-slate-50 rounded"
+                      className={`flex items-center justify-between text-sm p-2 rounded ${c.roles.some((r) => r.role === "leader") ? "bg-indigo-50" : "bg-slate-50"}`}
                     >
                       <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-indigo-400"></div>
@@ -1243,23 +1240,11 @@ export default function ProgramDetailPage({
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="flex items-center gap-3 p-3 bg-indigo-50 rounded-lg">
-                  <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs">
-                    L
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">
-                      {getStaffName(program.leader)}
-                    </p>
-                    <p className="text-xs text-slate-500">Felelős / Lead</p>
-                  </div>
-                </div>
-
                 {crew.length > 0 ? (
                   crew.map((c) => (
                     <div
                       key={c.staff}
-                      className="flex items-center justify-between group p-3 rounded-lg hover:bg-slate-100 transition bg-slate-50"
+                      className={`flex items-center justify-between group p-3 rounded-lg hover:bg-slate-100 transition ${c.roles.some((r) => r.role === "leader") ? "bg-indigo-100" : "border-2 border-slate-200"}`}
                     >
                       <div className="flex items-center gap-3">
                         <User className="w-4 h-4 text-slate-400" />
@@ -1271,7 +1256,19 @@ export default function ProgramDetailPage({
                           </p>
                           <div className="flex gap-1">
                             {c.roles.map((member_role: CrewMember) => (
-                              <Badge key={member_role.id} variant="outline">
+                              <Badge
+                                key={member_role.id}
+                                variant={
+                                  member_role.role === "egyeb"
+                                    ? "outline"
+                                    : "secondary"
+                                }
+                                className={
+                                  member_role.role === "egyeb"
+                                    ? "text-slate-400"
+                                    : ""
+                                }
+                              >
                                 {member_role.role}
                               </Badge>
                             ))}

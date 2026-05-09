@@ -78,7 +78,7 @@ export interface CrewMember {
   id: number;
   staff: string;
   program: number;
-  role: CrewPosition | null;
+  role: CrewPosition | "leader" | null;
 }
 
 export interface CrewMemberResult {

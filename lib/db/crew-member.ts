@@ -1,27 +1,36 @@
 import { createClient } from "@/lib/supabase/client";
-import type {CrewMember, CrewMemberResult} from "./types";
+import type { CrewMember, CrewMemberResult, Program } from "./types";
 
-export async function getCrewByProgram(programId: number): Promise<CrewMemberResult[]> {
+export async function getCrewByProgram(
+  program: Program,
+): Promise<CrewMemberResult[]> {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("crew_member")
     .select("*")
-    .eq("program", programId);
+    .eq("program", program.id);
   if (error) throw error;
-  if(!data) return [];
+  if (!data) return [];
 
-  return [...new Set(data.map((member: CrewMember) => member.staff))]
-      .map((staff_id) => {
-        return {
-          staff: staff_id,
-          roles: data
-                .filter((member: CrewMember) => member.staff == staff_id)
-        };
-  })
+  return [
+    ...new Set([
+      program.leader!,
+      ...data.map((member: CrewMember) => member.staff),
+    ]),
+  ].map((staff_id) => {
+    let roles = data.filter((member: CrewMember) => member.staff == staff_id);
+    if (staff_id === program.leader) {
+      roles = [...roles, { id: 0, staff: staff_id, role: "leader" }];
+    }
+    return {
+      staff: staff_id,
+      roles,
+    };
+  });
 }
 
 export async function createCrewMember(
-  member: Omit<CrewMember, "id">
+  member: Omit<CrewMember, "id">,
 ): Promise<CrewMember> {
   const supabase = createClient();
   const { data, error } = await supabase
