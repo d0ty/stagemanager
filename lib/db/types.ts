@@ -173,6 +173,7 @@ export interface EquipmentLoan {
   status: LoanStatus | null;
   taken_by: EquipmentLoanTaker | null;
   notes: string | null;
+  item_count?: number | null;
 }
 
 export interface EquipmentLoanItem {

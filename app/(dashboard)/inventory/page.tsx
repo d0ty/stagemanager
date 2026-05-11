@@ -92,6 +92,7 @@ export default function InventoryPage() {
   const [equipmentSortDirection, setEquipmentSortDirection] = useState<
     "asc" | "desc"
   >("asc");
+  const [currentLoanId, setCurrentLoanId] = useState<number | null>(null);
 
   // New item form state
   const [newItemTypeId, setNewItemTypeId] = useState<string>("");
@@ -470,6 +471,15 @@ export default function InventoryPage() {
       notes: (loan.notes as string) ?? "",
     };
   };
+
+  useEffect(() => {
+    if (currentLoanId !== null) {
+      setCurrentLoanId(
+        parseInt(window.location.search.replace("?", "").split("=")[1]),
+      );
+    }
+    document.getElementById("current-loan")?.scrollIntoView();
+  }, [currentLoanId]);
 
   return (
     <div className="space-y-8 animate-in fade-in">
@@ -899,7 +909,12 @@ export default function InventoryPage() {
                       notes,
                     } = getLoanTakenBy(loan);
                     return (
-                      <TableRow key={loan.id}>
+                      <TableRow
+                        key={loan.id}
+                        id={
+                          loan.id === currentLoanId ? "current-loan" : undefined
+                        }
+                      >
                         <TableCell className="font-medium">
                           <div className="space-y-1">
                             {items.map((item) => (

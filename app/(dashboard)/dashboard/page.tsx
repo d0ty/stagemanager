@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Clock,
+  ArrowLeft,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,14 +40,25 @@ export default function DashboardPage() {
   });
 
   const upcomingPrograms = (programs ?? []).filter(
-    (p) => p.status !== "lezarva" && p.status !== "lemondva"
+    (p) => p.status !== "lezarva" && p.status !== "lemondva",
   );
 
-  const getLeaderName = (leaderId: string | null) => {
-    if (!leaderId || !staffList) return "-";
-    const s = staffList.find((st) => st.id === leaderId);
+  const getStaffName = (staffId: string | null) => {
+    if (!staffId || !staffList) return "-";
+    const s = staffList.find((st) => st.id === staffId);
     return s?.name ?? "-";
   };
+
+  const getProgramName = (programId: number | null) => {
+    if (!programId || !programs) return "-";
+    const p = programs.find((p) => p.id === programId);
+    return p?.description ?? "-";
+  };
+
+  const allLoanedItems = (loans ?? []).reduce(
+    (acc, loan) => acc + (loan.item_count ?? 0),
+    0,
+  );
 
   return (
     <div className="space-y-8 animate-in fade-in">
@@ -68,7 +80,9 @@ export default function DashboardPage() {
         <Card className="bg-white hover:shadow-md transition-shadow">
           <CardContent className="p-6 flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-slate-500">Aktív Programok</p>
+              <p className="text-sm font-medium text-slate-500">
+                Aktív Programok
+              </p>
               <p className="text-3xl font-bold text-indigo-600 mt-1">
                 {upcomingPrograms.length}
               </p>
@@ -82,9 +96,11 @@ export default function DashboardPage() {
         <Card className="bg-white hover:shadow-md transition-shadow">
           <CardContent className="p-6 flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-slate-500">Kiadott Eszközök</p>
+              <p className="text-sm font-medium text-slate-500">
+                Kiadott Eszközök
+              </p>
               <p className="text-3xl font-bold text-amber-600 mt-1">
-                {loans?.length ?? 0}
+                {allLoanedItems}
               </p>
             </div>
             <div className="p-3 bg-amber-50 rounded-full">
@@ -96,7 +112,9 @@ export default function DashboardPage() {
         <Card className="bg-white hover:shadow-md transition-shadow">
           <CardContent className="p-6 flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-slate-500">Rendszer Állapot</p>
+              <p className="text-sm font-medium text-slate-500">
+                Rendszer Állapot
+              </p>
               <p className="text-xl font-bold text-emerald-600 mt-1 flex items-center gap-2">
                 <CheckCircle2 className="w-5 h-5" /> Online
               </p>
@@ -111,7 +129,9 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <Card className="h-full bg-white">
           <div className="flex flex-row items-center justify-between p-6 pb-2">
-            <h2 className="text-lg font-semibold text-slate-500">Következő Események</h2>
+            <h2 className="text-lg font-semibold text-slate-500">
+              Következő Események
+            </h2>
             <Link
               href="/programs"
               className="text-sm text-indigo-600 hover:underline flex items-center"
@@ -144,7 +164,9 @@ export default function DashboardPage() {
                       <div className="flex-shrink-0 w-12 h-12 bg-slate-100 rounded-lg flex flex-col items-center justify-center text-slate-700 font-bold text-sm">
                         <span className="text-xs uppercase">
                           {program.date
-                            ? format(new Date(program.date), "MMM", { locale: hu })
+                            ? format(new Date(program.date), "MMM", {
+                                locale: hu,
+                              })
                             : "-"}
                         </span>
                         <span>
@@ -164,7 +186,7 @@ export default function DashboardPage() {
                           </span>
                           <span className="flex items-center gap-1 truncate">
                             <User className="w-3 h-3" />{" "}
-                            {getLeaderName(program.leader)}
+                            {getStaffName(program.leader)}
                           </span>
                         </div>
                       </div>
@@ -192,7 +214,9 @@ export default function DashboardPage() {
 
         <Card className="h-full bg-white">
           <div className="flex flex-row items-center justify-between p-6 pb-2">
-            <h2 className="text-lg font-semibold text-slate-500">Kiadott Eszközök</h2>
+            <h2 className="text-lg font-semibold text-slate-500">
+              Aktív Kölcsönzések
+            </h2>
             <Link
               href="/inventory"
               className="text-sm text-indigo-600 hover:underline flex items-center"
@@ -218,23 +242,40 @@ export default function DashboardPage() {
                     className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="p-2 bg-amber-50 rounded-full">
-                        <AlertCircle className="w-4 h-4 text-amber-600" />
+                      <div className="flex items-center justify-center p-2 w-8 h-8 bg-amber-50 rounded-full">
+                        <p className="text-center font-bold text-amber-600">
+                          {loan.item_count ?? "-"}
+                        </p>
                       </div>
                       <div>
                         <p className="text-sm font-medium text-slate-900">
-                          {(loan.taken_by as { equipment_name?: string })?.equipment_name ??
-                            "Eszköz"}
+                          {loan.taken_by?.program != null
+                            ? `${getProgramName(loan.taken_by!.program!)} (${getStaffName(loan.taken_by!.staff!)})`
+                            : loan.taken_by?.type == "staff"
+                              ? getStaffName(loan.taken_by!.staff!)
+                              : loan.taken_by?.type == "external"
+                                ? loan.taken_by!.name != null
+                                  ? `Külsős: ${loan.taken_by!.name}`
+                                  : "Külsős"
+                                : "Kölcsönzés"}
                         </p>
                         <p className="text-xs text-slate-500">
                           {loan.start_date
-                            ? format(new Date(loan.start_date), "dd/MM/yyyy HH:mm")
+                            ? format(
+                                new Date(loan.start_date),
+                                "dd/MM/yyyy HH:mm",
+                              )
                             : "-"}
                         </p>
                       </div>
                     </div>
-                    <Badge variant="outline" className="text-xs">
-                      Kiadva
+                    <Badge
+                      variant="outline"
+                      className="text-xs rounded-full h-8 w-8 flex items-center justify-center"
+                    >
+                      <a href={`/inventory?current=${loan.id}`}>
+                        <ArrowRight className="w-4 h-4 text-slate-500" />
+                      </a>
                     </Badge>
                   </div>
                 ))

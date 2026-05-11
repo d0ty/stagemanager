@@ -58,7 +58,7 @@ export async function listEquipmentLoans(
   status?: "aktiv" | "lezart",
 ): Promise<EquipmentLoan[]> {
   const supabase = createClient();
-  let query = supabase.from("equipment_loan").select("*");
+  let query = supabase.from("equipment_details").select("*");
   if (status) query = query.eq("status", status);
   const { data, error } = await query.order("start_date", {
     ascending: false,
