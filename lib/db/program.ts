@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
-import { createProgramFolder } from "@/lib/gdrive";
+import { createProgramFolder } from "@/lib/google";
 import type { Program } from "./types";
 
 export async function listPrograms(orderBy = "date"): Promise<Program[]> {

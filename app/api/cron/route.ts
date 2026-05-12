@@ -1,32 +1,11 @@
-import { getGoogleAuthClient } from "@/lib/gdrive";
+import { updateEdgeConfig } from "@/lib/edge-config";
+import { getGoogleAuthClient } from "@/lib/google";
 
 export async function GET() {
   const auth = await getGoogleAuthClient();
-  const updateResp = await fetch(
-    `https://api.vercel.com/v1/edge-config/${new URL(process.env.EDGE_CONFIG!).pathname.split("/")[1]}/items`,
-    {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.VERCEL_TOKEN}`,
-      },
-      body: JSON.stringify({
-        items: [
-          {
-            operation: "update",
-            key: "access_token",
-            value: auth.credentials.access_token,
-          },
-          {
-            operation: "update",
-            key: "refresh_token",
-            value: auth.credentials.refresh_token,
-          },
-        ],
-      }),
-    },
-  );
-  console.log(await updateResp.text());
-
-  return new Response("OK", { status: 200 });
+  const result = await updateEdgeConfig({
+    access_token: auth.credentials.access_token,
+    refresh_token: auth.credentials.refresh_token,
+  });
+  return new Response(result ? "OK" : "Failed", { status: result ? 200 : 500 });
 }

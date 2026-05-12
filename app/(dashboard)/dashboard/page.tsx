@@ -14,6 +14,7 @@ import {
   AlertCircle,
   Clock,
   ArrowLeft,
+  Loader,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { listPrograms } from "@/lib/db/program";
 import { listEquipmentLoans } from "@/lib/db/equipment";
 import { listStaff } from "@/lib/db/staff";
+import { checkToken, getGoogleOauthClient, getRedirectURL } from "@/lib/google";
+import { useEffect, useMemo, useState } from "react";
 
 export default function DashboardPage() {
   const { data: programs, isLoading: isProgramsLoading } = useQuery({
@@ -59,6 +62,20 @@ export default function DashboardPage() {
     (acc, loan) => acc + (loan.item_count ?? 0),
     0,
   );
+
+  const [isSystemReady, setIsSystemReady] = useState<boolean | null>(null);
+  const [redirectURL, setRedirectURL] = useState<string | null>(null);
+  useEffect(() => {
+    const checkSystemReady = async () => {
+      const ready = await checkToken();
+      setIsSystemReady(ready);
+      if (!ready) {
+        const url = await getRedirectURL();
+        setRedirectURL(url);
+      }
+    };
+    checkSystemReady();
+  }, []);
 
   return (
     <div className="space-y-8 animate-in fade-in">
@@ -113,14 +130,34 @@ export default function DashboardPage() {
           <CardContent className="p-6 flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-slate-500">
-                Rendszer Állapot
+                Kapcsolat a Google Drive-val
               </p>
-              <p className="text-xl font-bold text-emerald-600 mt-1 flex items-center gap-2">
-                <CheckCircle2 className="w-5 h-5" /> Online
+              <p
+                className={`text-xl font-bold text-${isSystemReady === null ? "slate" : isSystemReady ? "emerald" : "amber"}-600 mt-1 flex items-center gap-2`}
+              >
+                {isSystemReady === null ? (
+                  <Loader />
+                ) : isSystemReady ? (
+                  <CheckCircle2 className="w-5 h-5" />
+                ) : (
+                  <AlertCircle className="w-5 h-5" />
+                )}{" "}
+                {isSystemReady === null
+                  ? "Ellenőrzés..."
+                  : isSystemReady
+                    ? "Online"
+                    : "Offline"}
               </p>
+              {isSystemReady === false && (
+                <Link href={redirectURL ?? "/"}>Fix</Link>
+              )}
             </div>
-            <div className="p-3 bg-emerald-50 rounded-full">
-              <Clock className="w-6 h-6 text-emerald-600" />
+            <div
+              className={`p-3 bg-${isSystemReady === null ? "slate" : isSystemReady ? "emerald" : "amber"}-50 rounded-full`}
+            >
+              <Clock
+                className={`w-6 h-6 text-${isSystemReady === null ? "slate" : isSystemReady ? "emerald" : "amber"}-600`}
+              />
             </div>
           </CardContent>
         </Card>

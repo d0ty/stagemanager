@@ -4,7 +4,7 @@ import {
   upload_program_media,
   delete_program_media,
   get_program_media_link,
-} from "@/lib/gdrive";
+} from "@/lib/google";
 import { createClient } from "@/lib/supabase/server";
 import type { ProgramFile } from "@/lib/db/types";
 
@@ -28,7 +28,13 @@ export async function uploadFilesAction(
 
   const files = formData.getAll("files") as File[];
   for (const file of files) {
-    await upload_program_media(program, Buffer.from(await file.arrayBuffer()), file.type, file.name, user.id);
+    await upload_program_media(
+      program,
+      Buffer.from(await file.arrayBuffer()),
+      file.type,
+      file.name,
+      user.id,
+    );
   }
 }
 
