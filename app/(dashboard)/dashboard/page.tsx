@@ -23,7 +23,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { listPrograms } from "@/lib/db/program";
 import { listEquipmentLoans } from "@/lib/db/equipment";
 import { listStaff } from "@/lib/db/staff";
-import { checkToken, getGoogleOauthClient, getRedirectURL } from "@/lib/google";
+import { checkToken, getRedirectURL } from "@/lib/google";
 import { useEffect, useMemo, useState } from "react";
 
 export default function DashboardPage() {
