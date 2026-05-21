@@ -3,7 +3,10 @@
 import { google } from "googleapis";
 import { get } from "@vercel/edge-config";
 
-async function getGoogleOauthClient() {
+async function getGoogleOauthClient(
+  protocol: string = "http:",
+  host: string = "localhost:3000",
+) {
   const {
     web: { client_id, client_secret },
   } = JSON.parse(Buffer.from(process.env.DRIVE_CREDS!, "base64").toString());
@@ -11,7 +14,7 @@ async function getGoogleOauthClient() {
   const oauth2Client = new google.auth.OAuth2(
     client_id,
     client_secret,
-    "http://localhost:3000/auth/google/callback",
+    `${protocol}//${host}/auth/google/callback`,
   );
 
   return oauth2Client;
@@ -45,8 +48,8 @@ export async function checkToken() {
   return resp.ok;
 }
 
-export async function getRedirectURL() {
-  const oauth2Client = await getGoogleOauthClient();
+export async function getRedirectURL(protocol: string, host: string) {
+  const oauth2Client = await getGoogleOauthClient(protocol, host);
   return oauth2Client.generateAuthUrl({
     access_type: "offline",
     scope: ["https://www.googleapis.com/auth/drive"],

@@ -70,7 +70,10 @@ export default function DashboardPage() {
       const ready = await checkToken();
       setIsSystemReady(ready);
       if (!ready) {
-        const url = await getRedirectURL();
+        const url = await getRedirectURL(
+          window.location.protocol,
+          window.location.host,
+        );
         setRedirectURL(url);
       }
     };

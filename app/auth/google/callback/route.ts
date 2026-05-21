@@ -1,5 +1,6 @@
 import { updateEdgeConfig } from "@/lib/edge-config";
 import { authenticateUsingCode } from "@/lib/google";
+import { redirect } from "next/navigation";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -16,5 +17,5 @@ export async function GET(request: Request) {
   if (!configSuccess) {
     return new Response("Failed to update edge config", { status: 500 });
   }
-  return Response.redirect(new URL("/dashboard"), 302);
+  redirect("/dashboard");
 }
