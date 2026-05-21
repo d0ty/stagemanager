@@ -9,7 +9,7 @@ export async function GET(request: Request) {
     return new Response("No code provided", { status: 400 });
   }
 
-  const auth = await authenticateUsingCode(code);
+  const auth = await authenticateUsingCode(code, new URL(request.url));
   const configSuccess = await updateEdgeConfig({
     access_token: auth.credentials.access_token,
     refresh_token: auth.credentials.refresh_token,

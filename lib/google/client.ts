@@ -3,6 +3,9 @@
 import { google } from "googleapis";
 import { get } from "@vercel/edge-config";
 
+const getUrl = (protocol: string = "http:", host: string = "localhost:3000") =>
+  `${protocol}//${host}/auth/google/callback`;
+
 async function getGoogleOauthClient(
   protocol: string = "http:",
   host: string = "localhost:3000",
@@ -14,7 +17,7 @@ async function getGoogleOauthClient(
   const oauth2Client = new google.auth.OAuth2(
     client_id,
     client_secret,
-    `${protocol}//${host}/auth/google/callback`,
+    getUrl(protocol, host),
   );
 
   return oauth2Client;
@@ -57,9 +60,12 @@ export async function getRedirectURL(protocol: string, host: string) {
   });
 }
 
-export async function authenticateUsingCode(code: string) {
+export async function authenticateUsingCode(code: string, url: URL) {
   const oauth2Client = await getGoogleOauthClient();
-  const { tokens } = await oauth2Client.getToken(code);
+  const { tokens } = await oauth2Client.getToken({
+    code,
+    redirect_uri: getUrl(url.protocol, url.host),
+  });
   oauth2Client.setCredentials(tokens);
   return oauth2Client;
 }
