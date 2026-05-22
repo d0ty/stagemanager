@@ -183,10 +183,7 @@ export default function DashboardLayout({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Mégse</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleLogout}
-              className="bg-red-600 hover:bg-red-700"
-            >
+            <AlertDialogAction onClick={handleLogout} className="text-red-600">
               Kijelentkezés
             </AlertDialogAction>
           </AlertDialogFooter>
