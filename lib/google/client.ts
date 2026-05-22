@@ -2,6 +2,7 @@
 
 import { google } from "googleapis";
 import { get } from "@vercel/edge-config";
+import { updateEdgeConfig } from "../edge-config";
 
 const getUrl = (protocol: string = "http:", host: string = "localhost:3000") =>
   `${protocol}//${host}/auth/google/callback`;
@@ -20,6 +21,15 @@ async function getGoogleOauthClient(
     getUrl(protocol, host),
   );
 
+  oauth2Client.on("tokens", async (tokens) => {
+    console.log("token refreshing");
+    const configSuccess = await updateEdgeConfig({
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
+    });
+    if (!configSuccess) console.error("token refresh failed");
+  });
+
   return oauth2Client;
 }
 
@@ -30,15 +40,10 @@ export async function getGoogleAuthClient() {
     refresh_token: await get("refresh_token"),
   });
 
-  console.log("token refresh");
-  // console.log(await oauth2Client.refreshAccessToken());
-  console.log(oauth2Client.credentials);
-  console.log(await oauth2Client.getAccessToken());
-
   return oauth2Client;
 }
 
-export async function setupAuth() {
+export async function setupDrive() {
   const oauth2Client = await getGoogleAuthClient();
   return google.drive({ version: "v3", auth: oauth2Client }) ?? null;
 }

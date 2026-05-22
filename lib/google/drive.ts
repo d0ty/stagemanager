@@ -1,7 +1,7 @@
 "use server";
 
 import { Program, ProgramFile } from "@/lib/db/types";
-import { setupAuth } from "@/lib/google/client.ts";
+import { setupDrive } from "@/lib/google/client.ts";
 import { createClient } from "@/lib/supabase/server.ts";
 import { Readable } from "node:stream";
 
@@ -27,7 +27,7 @@ async function add_permission(
 }
 
 export async function createProgramFolder(program: Program) {
-  const drive = await setupAuth()!;
+  const drive = await setupDrive()!;
   const folderName = `${program.date} - ${program.description}`;
   const folder = await drive!.files.create({
     requestBody: {
@@ -75,7 +75,7 @@ export async function upload_program_media(
   filename: string,
   user_id: string,
 ) {
-  const drive = await setupAuth()!;
+  const drive = await setupDrive()!;
 
   const result_file = await drive!.files.create({
     requestBody: {
@@ -103,7 +103,7 @@ export async function upload_program_media(
 
 export async function delete_program_media(program_file: ProgramFile) {
   if (program_file.mime_type !== "link") {
-    await (await setupAuth())!.files.update({
+    await (await setupDrive())!.files.update({
       fileId: program_file.file_url ?? undefined,
       requestBody: {
         trashed: true,

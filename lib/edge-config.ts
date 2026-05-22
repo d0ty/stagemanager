@@ -10,11 +10,17 @@ export async function updateEdgeConfig(data: Record<string, any>) {
         Authorization: `Bearer ${process.env.VERCEL_TOKEN}`,
       },
       body: JSON.stringify({
-        items: Object.entries(data).map(([key, value]) => ({
-          operation: "update",
-          key,
-          value,
-        })),
+        items: Object.entries(data)
+          .map(([key, value]) =>
+            value
+              ? {
+                  operation: "update",
+                  key,
+                  value,
+                }
+              : null,
+          )
+          .filter((item) => item !== null),
       }),
     },
   );
