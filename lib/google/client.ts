@@ -50,10 +50,16 @@ export async function setupDrive() {
 
 export async function checkToken() {
   const accessToken = await get("access_token");
-  const resp = await fetch(
+  const accessTokenStatus = await fetch(
     "https://oauth2.googleapis.com/tokeninfo?access_token=" + accessToken,
   );
-  return resp.ok;
+  if (accessTokenStatus.ok) return true;
+  try {
+    await getGoogleAuthClient();
+    return true;
+  } catch (e) {
+    return false;
+  }
 }
 
 export async function getRedirectURL(protocol: string, host: string) {
