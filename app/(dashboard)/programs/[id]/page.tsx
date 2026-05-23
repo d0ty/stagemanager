@@ -437,7 +437,6 @@ export default function ProgramDetailPage({
       status: (formData.get("status") as any) || "teendo",
       details: (formData.get("details") as string) || null,
     };
-    console.log(taskData);
     if (editingTask) {
       updateTaskMutation.mutate({
         id: editingTask.id,
