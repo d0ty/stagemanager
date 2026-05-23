@@ -428,16 +428,16 @@ export default function ProgramDetailPage({
   const handleTaskSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-
+    const assigned_to = formData.get("assigned_to") as string;
     const taskData = {
       program: programId,
       type: taskType as any,
-      assigned_to: (formData.get("assigned_to") as string) || null,
+      assigned_to: (assigned_to == "none" ? null : assigned_to) || null,
       priority: (formData.get("priority") as any) || null,
       status: (formData.get("status") as any) || "teendo",
       details: (formData.get("details") as string) || null,
     };
-
+    console.log(taskData);
     if (editingTask) {
       updateTaskMutation.mutate({
         id: editingTask.id,
@@ -2158,12 +2158,13 @@ export default function ProgramDetailPage({
               <Label htmlFor="assigned_to">Ki végzi?</Label>
               <Select
                 name="assigned_to"
-                defaultValue={editingTask?.assigned_to || ""}
+                defaultValue={editingTask?.assigned_to || "none"}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Válassz személyt..." />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="none">Nincs hozzárendelve</SelectItem>
                   {staffList.map((s) => (
                     <SelectItem key={s.id} value={s.id}>
                       {s.name || s.id}
