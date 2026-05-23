@@ -4,7 +4,13 @@ import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { ArrowLeft, CalendarDays, Save, Trash } from "lucide-react";
+import {
+  ArrowLeft,
+  CalendarDays,
+  CheckCircle,
+  Save,
+  Trash,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -94,6 +100,12 @@ export default function EditProgramPage({
     }
   };
 
+  const handleClose = () => {
+    updateMutation.mutate({
+      status: new Date(formData.date) < new Date() ? "lemondva" : "lezarva",
+    });
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -131,8 +143,6 @@ export default function EditProgramPage({
       </div>
     );
   }
-
-  console.log(program, formData);
 
   return (
     <div className="space-y-8 animate-in fade-in">
@@ -217,8 +227,6 @@ export default function EditProgramPage({
                     <SelectItem value="tervezes">Tervezés</SelectItem>
                     <SelectItem value="proba_alatt">Próba alatt</SelectItem>
                     <SelectItem value="veglegesites">Véglegesítés</SelectItem>
-                    <SelectItem value="lezarva">Lezárva</SelectItem>
-                    <SelectItem value="lemondva">Lemondva</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -249,14 +257,26 @@ export default function EditProgramPage({
 
             {/* Actions */}
             <div className="flex justify-between pt-4 border-t">
-              <Button
-                type="button"
-                variant="destructive"
-                onClick={() => handleDelete()}
-              >
-                <Trash className="w-4 h-4 mr-2" />
-                Törlés
-              </Button>
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={() => handleDelete()}
+                >
+                  <Trash className="w-4 h-4 mr-2" />
+                  Törlés
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => handleClose()}
+                >
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  {new Date(program!.date!) < new Date()
+                    ? "Lezárás"
+                    : "Lemondás"}
+                </Button>
+              </div>
               <div className="gap-3 flex">
                 <Link href={`/programs/${programId}`}>
                   <Button type="button" variant="outline">

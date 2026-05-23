@@ -36,6 +36,8 @@ import {
   Search,
   PlusSquare,
   X,
+  Check,
+  CheckCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -1719,6 +1721,14 @@ export default function ProgramDetailPage({
                       )}
                     </div>
                   ))}
+                {new Date(program.date ?? 0) < new Date() && (
+                  <div className="flex w-full justify-center">
+                    <Button variant="secondary">
+                      <CheckCircle />
+                      Lezárás
+                    </Button>
+                  </div>
+                )}
                 {activities.length === 0 && !program.date && (
                   <div className="text-center py-12 text-slate-400">
                     <Clock className="w-16 h-16 mx-auto mb-4 text-slate-200" />
