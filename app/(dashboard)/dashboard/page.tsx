@@ -24,6 +24,7 @@ import { listEquipmentLoans } from "@/lib/db/equipment";
 import { listStaff } from "@/lib/db/staff";
 import { checkToken, getRedirectURL } from "@/lib/google";
 import { useEffect, useMemo, useState } from "react";
+import dayjs from "dayjs";
 
 export default function DashboardPage() {
   const { data: programs, isLoading: isProgramsLoading } = useQuery({
@@ -202,10 +203,12 @@ export default function DashboardPage() {
                     <div className="flex items-start gap-4">
                       <div className="flex-shrink-0 w-12 h-12 bg-slate-100 rounded-lg flex flex-col items-center justify-center text-slate-700 font-bold text-sm">
                         <span className="text-xs uppercase">
-                          {program.date ? formatDate(new Date(program.date)) : "-"}
+                          {program.date
+                            ? dayjs(program.date).format("MMMM")
+                            : "-"}
                         </span>
                         <span>
-                          {program.date ? formatDate(new Date(program.date)) : "-"}
+                          {program.date ? new Date(program.date).getDay() : "-"}
                         </span>
                       </div>
                       <div className="flex-1 min-w-0">
@@ -293,7 +296,9 @@ export default function DashboardPage() {
                                 : "Kölcsönzés"}
                         </p>
                         <p className="text-xs text-slate-500">
-                          {loan.start_date ? formatDateTime(new Date(loan.start_date)) : "-"}
+                          {loan.start_date
+                            ? formatDateTime(new Date(loan.start_date))
+                            : "-"}
                         </p>
                       </div>
                     </div>
