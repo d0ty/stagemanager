@@ -20,6 +20,7 @@ import { createProgram } from "@/lib/db/program";
 import { listStaff } from "@/lib/db/staff";
 import type { EquipmentInventory, Program, ProgramState } from "@/lib/db/types";
 import { createEquipmentLoan } from "@/lib/db";
+import { formatDateTime } from "@/lib/date";
 
 export default function NewProgramPage() {
   const router = useRouter();
@@ -44,7 +45,7 @@ export default function NewProgramPage() {
       createProgram(prog).then((prog_id) => {
         ["foh", "stage", "egyeb"].forEach((inv) =>
           createEquipmentLoan({
-            start_date: new Date().toLocaleString(),
+            start_date: formatDateTime(new Date()),
             expected_return_date: prog_id.date,
             return_date: null,
             inventory: inv as EquipmentInventory,

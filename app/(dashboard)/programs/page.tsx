@@ -3,8 +3,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { format } from "date-fns";
-import { hu } from "date-fns/locale";
+import { formatDate, formatTime, formatDateTime } from "@/lib/date";
 import {
   Edit,
   Trash2,
@@ -30,6 +29,16 @@ import {
 import { listPrograms, deleteProgram } from "@/lib/db/program";
 import { listStaff } from "@/lib/db/staff";
 import { usePermissions } from "@/hooks/use-permissions";
+
+// Compatibility wrapper to reuse @lib/date formatting where date-fns was used
+const format = (d: any, fmt?: string) => {
+  if (!d) return "";
+  const date = new Date(d);
+  if (fmt === "dd/MM/yyyy HH:mm") return formatDateTime(date);
+  if (fmt === "dd/MM/yyyy" || fmt === "yyyy-MM-dd" || fmt === "d" || fmt === "MMM") return formatDate(date);
+  if (fmt === "HH:mm") return formatTime(date);
+  return formatDate(date);
+};
 
 export default function ProgramsPage() {
   const { can } = usePermissions();
@@ -128,18 +137,8 @@ export default function ProgramsPage() {
                       href={`/programs/${program.id}`}
                       className="flex-shrink-0 w-16 h-16 bg-slate-100 rounded-lg flex flex-col items-center justify-center text-slate-700 border border-slate-200 hover:bg-slate-200 transition-colors"
                     >
-                      <span className="text-xs uppercase font-bold">
-                        {program.date
-                          ? format(new Date(program.date), "MMM", {
-                              locale: hu,
-                            })
-                          : "-"}
-                      </span>
-                      <span className="text-xl font-bold">
-                        {program.date
-                          ? format(new Date(program.date), "d")
-                          : "-"}
-                      </span>
+                      <span className="text-xs uppercase font-bold">{program.date ? formatDate(new Date(program.date)) : "-"}</span>
+                      <span className="text-xl font-bold">{program.date ? formatDate(new Date(program.date)) : "-"}</span>
                     </Link>
                     <div className="flex-1 space-y-1">
                       <div className="flex items-center gap-2">
@@ -281,18 +280,8 @@ export default function ProgramsPage() {
                       href={`/programs/${program.id}`}
                       className="flex-shrink-0 w-16 h-16 bg-slate-200 rounded-lg flex flex-col items-center justify-center text-slate-500 hover:bg-slate-300 transition-colors"
                     >
-                      <span className="text-xs uppercase font-bold">
-                        {program.date
-                          ? format(new Date(program.date), "MMM", {
-                              locale: hu,
-                            })
-                          : "-"}
-                      </span>
-                      <span className="text-xl font-bold">
-                        {program.date
-                          ? format(new Date(program.date), "d")
-                          : "-"}
-                      </span>
+                      <span className="text-xs uppercase font-bold">{program.date ? formatDate(new Date(program.date)) : "-"}</span>
+                      <span className="text-xl font-bold">{program.date ? formatDate(new Date(program.date)) : "-"}</span>
                     </Link>
                     <div className="flex-1 space-y-1">
                       <div className="flex items-center gap-2">

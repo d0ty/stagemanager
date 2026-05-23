@@ -3,8 +3,7 @@
 import { use, useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { format, set } from "date-fns";
-import { hu } from "date-fns/locale";
+import { formatDate, formatTime, formatDateTime } from "@/lib/date";
 import {
   AlertCircle,
   ArrowLeft,
@@ -106,6 +105,7 @@ import {
   listEquipmentLoanItems,
   listEquipmentTypes,
 } from "@/lib/db";
+import dayjs from "dayjs";
 
 export default function ProgramDetailPage({
   params,
@@ -604,11 +604,7 @@ export default function ProgramDetailPage({
             <div className="flex items-center gap-4 text-slate-500 mt-1 flex-wrap">
               <span className="flex items-center gap-1">
                 <Calendar className="w-4 h-4" />{" "}
-                {program.date
-                  ? format(new Date(program.date), "dd/MM/yyyy HH:mm", {
-                      locale: hu,
-                    })
-                  : "-"}
+                {program.date ? formatDateTime(new Date(program.date)) : "-"}
               </span>
               <span className="flex items-center gap-1">
                 <MapPin className="w-4 h-4" />{" "}
@@ -770,9 +766,7 @@ export default function ProgramDetailPage({
                         <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-1.5" />
                         <div className="flex-1 min-w-0">
                           <span className="text-xs">
-                            {r.date
-                              ? format(new Date(r.date), "dd/MM/yyyy HH:mm")
-                              : "-"}
+                            {r.date ? formatDateTime(new Date(r.date)) : "-"}
                           </span>
                           {r.lesson_period && (
                             <Badge variant="outline" className="ml-2 text-xs">
@@ -1463,9 +1457,8 @@ export default function ProgramDetailPage({
                                 <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                                   {file.uploaded_at && (
                                     <p className="text-xs text-slate-500">
-                                      {format(
+                                      {formatDateTime(
                                         new Date(file.uploaded_at),
-                                        "dd/MM/yyyy HH:mm",
                                       )}
                                     </p>
                                   )}
@@ -1656,10 +1649,10 @@ export default function ProgramDetailPage({
                     >
                       <div className="flex-shrink-0 w-12 h-12 bg-indigo-100 rounded-lg flex flex-col items-center justify-center text-indigo-700">
                         <span className="text-xs uppercase font-bold">
-                          {format(new Date(event.date!), "MMM", { locale: hu })}
+                          {dayjs(new Date(event.date!)).format("MMMM")}
                         </span>
                         <span className="text-lg font-bold">
-                          {format(new Date(event.date!), "d")}
+                          {new Date(event.date!).getDate()}
                         </span>
                       </div>
                       <div className="flex-1">
@@ -1678,7 +1671,7 @@ export default function ProgramDetailPage({
                                       : "-"}
                           </span>
                           <span className="text-xs text-slate-500">
-                            {format(new Date(event.date!), "HH:mm")}
+                            {formatTime(new Date(event.date!))}
                           </span>
                           {event.lesson_period && (
                             <Badge variant="outline" className="ml-2 text-xs">

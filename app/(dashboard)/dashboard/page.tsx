@@ -2,8 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { format } from "date-fns";
-import { hu } from "date-fns/locale";
+import { formatDate, formatTime, formatDateTime } from "@/lib/date";
 import {
   CalendarDays,
   MapPin,
@@ -203,16 +202,10 @@ export default function DashboardPage() {
                     <div className="flex items-start gap-4">
                       <div className="flex-shrink-0 w-12 h-12 bg-slate-100 rounded-lg flex flex-col items-center justify-center text-slate-700 font-bold text-sm">
                         <span className="text-xs uppercase">
-                          {program.date
-                            ? format(new Date(program.date), "MMM", {
-                                locale: hu,
-                              })
-                            : "-"}
+                          {program.date ? formatDate(new Date(program.date)) : "-"}
                         </span>
                         <span>
-                          {program.date
-                            ? format(new Date(program.date), "d")
-                            : "-"}
+                          {program.date ? formatDate(new Date(program.date)) : "-"}
                         </span>
                       </div>
                       <div className="flex-1 min-w-0">
@@ -300,12 +293,7 @@ export default function DashboardPage() {
                                 : "Kölcsönzés"}
                         </p>
                         <p className="text-xs text-slate-500">
-                          {loan.start_date
-                            ? format(
-                                new Date(loan.start_date),
-                                "dd/MM/yyyy HH:mm",
-                              )
-                            : "-"}
+                          {loan.start_date ? formatDateTime(new Date(loan.start_date)) : "-"}
                         </p>
                       </div>
                     </div>

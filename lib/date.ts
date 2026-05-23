@@ -1,13 +1,13 @@
 import dayjs from "dayjs";
 
 export function formatDate(date: Date) {
-  return dayjs(date).format("YYYY.M.D.");
+  return dayjs(date).format("YYYY.MM.DD.");
 }
 
 export function formatTime(date: Date) {
-  return dayjs(date).format("H:m");
+  return dayjs(date).format("H:mm");
 }
 
 export function formatDateTime(date: Date) {
-  return dayjs(date).format("YYYY.M.D. H:m");
+  return dayjs(date).format("YYYY.MM.DD. H:mm");
 }

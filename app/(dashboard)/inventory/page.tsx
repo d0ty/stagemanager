@@ -45,7 +45,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { format } from "date-fns";
+import { formatDate, formatDateTime } from "@/lib/date";
 import {
   listEquipmentTypes,
   listEquipmentItems,
@@ -950,19 +950,13 @@ export default function InventoryPage() {
                         </TableCell>
                         <TableCell>
                           {loan.start_date
-                            ? format(
-                                new Date(loan.start_date),
-                                "dd/MM/yyyy HH:mm",
-                              )
+                            ? formatDateTime(new Date(loan.start_date))
                             : "-"}
                         </TableCell>
                         <TableCell>
                           {loan.expected_return_date ? (
                             <span className="text-sm text-slate-700">
-                              {format(
-                                new Date(loan.expected_return_date),
-                                "dd/MM/yyyy",
-                              )}
+                              {formatDate(new Date(loan.expected_return_date))}
                             </span>
                           ) : (
                             <span className="text-slate-400 italic">-</span>
@@ -1320,19 +1314,13 @@ export default function InventoryPage() {
                               <span className="text-slate-700">
                                 K:{" "}
                                 {loan.start_date
-                                  ? format(
-                                      new Date(loan.start_date),
-                                      "dd/MM/yyyy HH:mm",
-                                    )
+                                  ? formatDateTime(new Date(loan.start_date))
                                   : "-"}
                               </span>
                               {loan.return_date && (
                                 <span className="text-emerald-600">
                                   V:{" "}
-                                  {format(
-                                    new Date(loan.return_date),
-                                    "dd/MM/yyyy HH:mm",
-                                  )}
+                                  {formatDateTime(new Date(loan.return_date))}
                                 </span>
                               )}
                             </div>

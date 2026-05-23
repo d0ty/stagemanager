@@ -43,6 +43,7 @@ import { listPrograms } from "@/lib/db/program";
 import { listStaff } from "@/lib/db/staff";
 import { listTasks, createTask, updateTask, deleteTask } from "@/lib/db/task";
 import type { Task, TaskType, TaskPriority, TaskStatus } from "@/lib/db/types";
+import { formatDate } from "@/lib/date";
 
 export default function TasksPage() {
   const queryClient = useQueryClient();
@@ -272,9 +273,7 @@ export default function TasksPage() {
                       {prog.description || "Névtelen"}
                     </div>
                     <div className="text-xs text-slate-500">
-                      {prog.date
-                        ? new Date(prog.date).toLocaleDateString("hu")
-                        : "-"}
+                      {prog.date ? formatDate(new Date(prog.date)) : "-"}
                     </div>
                   </button>
                 ))}
