@@ -1575,10 +1575,7 @@ export default function ProgramDetailPage({
                             <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                               {file.uploaded_at && (
                                 <p className="text-xs text-slate-500">
-                                  {format(
-                                    new Date(file.uploaded_at),
-                                    "dd/MM/yyyy HH:mm",
-                                  )}
+                                  {formatDateTime(new Date(file.uploaded_at))}
                                 </p>
                               )}
                               {file.uploaded_by && (
@@ -1974,7 +1971,7 @@ export default function ProgramDetailPage({
                   name="time"
                   defaultValue={
                     editingActivity?.date
-                      ? format(new Date(editingActivity.date), "HH:mm")
+                      ? formatTime(new Date(editingActivity.date))
                       : ""
                   }
                   required
