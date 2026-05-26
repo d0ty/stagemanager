@@ -59,7 +59,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { getProgram, updateProgram } from "@/lib/db/program";
+import { closeProgram, getProgram, updateProgram } from "@/lib/db/program";
 import {
   getCrewByProgram,
   createCrewMember,
@@ -1723,7 +1723,14 @@ export default function ProgramDetailPage({
                   ))}
                 {new Date(program.date ?? 0) < new Date() && (
                   <div className="flex w-full justify-center">
-                    <Button variant="secondary">
+                    <Button
+                      variant="secondary"
+                      onClick={() =>
+                        closeProgram(program.id, "lezarva").then(() =>
+                          window.location.replace("/programs"),
+                        )
+                      }
+                    >
                       <CheckCircle />
                       Lezárás
                     </Button>

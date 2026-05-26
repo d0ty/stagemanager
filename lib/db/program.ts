@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/client";
 import { createProgramFolder } from "@/lib/google";
 import type { Program } from "./types";
+import { closeEquipmentLoanByProgram } from "./equipment";
+import { closeTasksByProgram } from "./task";
 
 export async function listPrograms(orderBy = "date"): Promise<Program[]> {
   const supabase = createClient();
@@ -59,5 +61,20 @@ export async function updateProgram(
 export async function deleteProgram(id: number): Promise<void> {
   const supabase = createClient();
   const { error } = await supabase.from("program").delete().eq("id", id);
+  if (error) throw error;
+}
+
+export async function closeProgram(
+  id: number,
+  status: "lemondva" | "lezarva",
+): Promise<void> {
+  await closeEquipmentLoanByProgram(id);
+  await closeTasksByProgram(id);
+
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("program")
+    .update({ status })
+    .eq("id", id);
   if (error) throw error;
 }

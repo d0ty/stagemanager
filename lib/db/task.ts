@@ -22,19 +22,17 @@ export async function getTasksByProgram(programId: number): Promise<Task[]> {
 
 export async function getSoundTasks(programId: number): Promise<Task[]> {
   return getTasksByProgram(programId).then((tasks) =>
-    tasks.filter((t) => t.type === "sound")
+    tasks.filter((t) => t.type === "sound"),
   );
 }
 
 export async function getLightTasks(programId: number): Promise<Task[]> {
   return getTasksByProgram(programId).then((tasks) =>
-    tasks.filter((t) => t.type === "light")
+    tasks.filter((t) => t.type === "light"),
   );
 }
 
-export async function createTask(
-  task: Omit<Task, "id">
-): Promise<Task> {
+export async function createTask(task: Omit<Task, "id">): Promise<Task> {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("task")
@@ -47,7 +45,7 @@ export async function createTask(
 
 export async function updateTask(
   id: number,
-  updates: Partial<Task>
+  updates: Partial<Task>,
 ): Promise<Task> {
   const supabase = createClient();
   const { data, error } = await supabase
@@ -58,6 +56,15 @@ export async function updateTask(
     .single();
   if (error) throw error;
   return data as Task;
+}
+
+export async function closeTasksByProgram(programId: number): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("task")
+    .update({ status: "kesz" })
+    .eq("program", programId);
+  if (error) throw error;
 }
 
 export async function deleteTask(id: number): Promise<void> {

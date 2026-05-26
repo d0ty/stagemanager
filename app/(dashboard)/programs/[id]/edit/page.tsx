@@ -23,7 +23,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { deleteProgram, getProgram, updateProgram } from "@/lib/db/program";
+import {
+  closeProgram,
+  deleteProgram,
+  getProgram,
+  updateProgram,
+} from "@/lib/db/program";
 import { listStaff } from "@/lib/db/staff";
 import type { ProgramState } from "@/lib/db/types";
 
@@ -80,6 +85,17 @@ export default function EditProgramPage({
     },
   });
 
+  const closeMutation = useMutation({
+    mutationFn: (status: "lemondva" | "lezarva") =>
+      closeProgram(programId, status),
+    onSuccess: () => {
+      router.push(`/programs`);
+    },
+    onError: (error) => {
+      alert("Hiba történt a program lezárása során: " + error.message);
+    },
+  });
+
   const deleteMutation = useMutation({
     mutationFn: () => deleteProgram(programId),
     onSuccess: () => {
@@ -101,9 +117,9 @@ export default function EditProgramPage({
   };
 
   const handleClose = () => {
-    updateMutation.mutate({
-      status: new Date(formData.date) < new Date() ? "lemondva" : "lezarva",
-    });
+    closeMutation.mutate(
+      new Date(formData.date) < new Date() ? "lemondva" : "lezarva",
+    );
   };
 
   const handleSubmit = (e: React.FormEvent) => {

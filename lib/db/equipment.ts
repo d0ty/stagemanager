@@ -126,6 +126,15 @@ export async function updateEquipmentLoan(
   return data as EquipmentLoan;
 }
 
+export async function closeEquipmentLoanByProgram(program: number) {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("equipment_loan")
+    .update({ status: "lezart" })
+    .eq("taken_by->program", program);
+  if (error) throw error;
+}
+
 export async function deleteEquipmentLoan(id: number): Promise<void> {
   const supabase = createClient();
   const { error } = await supabase.from("equipment_loan").delete().eq("id", id);
