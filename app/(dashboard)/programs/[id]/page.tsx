@@ -1961,7 +1961,7 @@ export default function ProgramDetailPage({
                   name="date"
                   defaultValue={
                     editingActivity?.date
-                      ? format(new Date(editingActivity.date), "yyyy-MM-dd")
+                      ? formatDate(new Date(editingActivity.date))
                       : ""
                   }
                   required
